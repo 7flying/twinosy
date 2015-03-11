@@ -51,14 +51,14 @@ class Twitter(object):
 
     def _scroll_down(self, to):
         """Scrolls down to the specified value, returns expected position. """
-        to += 4500
+        to += 5500
         self.firefox.execute_script('scroll(0, ' + str(to) + ');')
         return to
 
     def _get_follx(self, expected, limit):
         """Private method to get the js-stream-items representing users."""
         errors = False
-        scroll = 0
+        scroll = previous = 0
         ret = set()
         if limit:
             expected = limit
@@ -66,9 +66,12 @@ class Twitter(object):
             scroll = self._scroll_down(scroll)
             elements = self.firefox.find_elements_by_class_name(
                     'js-stream-item')
-            for element in elements:
-                ret.add(str(element.find_element_by_class_name(
-                    'ProfileCard').get_attribute('data-screen-name')))
+            ret.update(set(str(element.find_element_by_class_name(
+                    'ProfileCard').get_attribute(
+                        'data-screen-name')) for element in elements))
+            if previous >= len(ret):
+                errors = True
+                print "[ ERROR ] The followx aren't updating"
         return ret
     
     def get_num_followers(self, user):

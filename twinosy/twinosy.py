@@ -3,7 +3,7 @@ from graphs import GraphGenerator
 from twitter import Twitter
 
 if __name__ == '__main__':
-    twitter = Twitter('', '')
+    twitter = Twitter('tebores_', 'teborestwitter23')
     twitter._login()
     following = twitter.get_following('Seven_Flying')
     followers = twitter.get_followers('Seven_Flying')
