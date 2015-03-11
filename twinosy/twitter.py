@@ -55,11 +55,13 @@ class Twitter(object):
         self.firefox.execute_script('scroll(0, ' + str(to) + ');')
         return to
 
-    def _get_follx(self, expected):
+    def _get_follx(self, expected, limit):
         """Private method to get the js-stream-items representing users."""
         errors = False
         scroll = 0
         ret = set()
+        if limit:
+            expected = limit
         while len(ret) < expected and not errors:
             scroll = self._scroll_down(scroll)
             elements = self.firefox.find_elements_by_class_name(
@@ -103,12 +105,12 @@ class Twitter(object):
         else:
             return None
     
-    def get_followers(self, user):
+    def get_followers(self, user, limit=False):
         """Returns the username's set of followers."""
         total_foll = self.get_num_followers(user)
-        return self._get_follx(total_foll)
+        return self._get_follx(total_foll, limit)
 
-    def get_following(self, user):
+    def get_following(self, user, limit=False):
         """Returns the username's set of followings."""
         total_foll = self.get_num_following(user)
-        return self._get_follx(total_foll)
+        return self._get_follx(total_foll, limit)

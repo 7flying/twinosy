@@ -9,5 +9,5 @@ if __name__ == '__main__':
     followers = twitter.get_followers('Seven_Flying')
     twitter._sign_out()
     g = GraphGenerator('Seven_Flying', followers, following)
-    g.generate_follows_graph()
+    g.generate_my_follows_graph()
     g.paint()

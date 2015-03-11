@@ -10,15 +10,18 @@ class GraphGenerator(object):
         self.following = following
         self.graph = nx.DiGraph()
 
-    def generate_follows_graph(self):
+    def generate_my_follows_graph(self):
         """Generates a graph taking into account the followers and following."""
-        self.graph.add_node(self.username)
-        for unique in self.followers | self.following:
+        self.generate_follows_graph(self.username, self.following, self.followers)
+
+    def generate_follows_graph(self, username, following, followers):
+        self.graph.add_node(username)
+        for unique in followers | following:
             self.graph.add_node(unique)
-        for user in self.followers:
-            self.graph.add_edge(user, self.username)
-        for user in self.following:
-            self.graph.add_edge(self.username, user)
+        for user in followers:
+            self.graph.add_edge(user, username)
+        for user in following:
+            self.graph.add_edge(username, user)
 
     def paint(self):
         """Draws the graph."""
@@ -35,5 +38,5 @@ if __name__ == '__main__':
     followers = set(['one', 'two', 'three', 'four'])
     following = set(['one', 'tree', 'five', 'nine', 'eleven'])
     graph = GraphGenerator('USER', followers, following)
-    graph.generate_follows_graph()
+    graph.generate_my_follows_graph()
     graph.paint()
