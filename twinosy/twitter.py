@@ -49,11 +49,66 @@ class Twitter(object):
             except NoSuchElementException, e:
                 print "Exception %s" % e.args[0]
 
-    def get_followers(self, username):
-        """Returns the username's list of followers."""
-        if self.loged_in:
-            self.firefox.get('https://twitter.com/followers')
+    def _scroll_down(self, to):
+        """Scrolls down to the specified value, returns expected position. """
+        to += 4500
+        self.firefox.execute_script('scroll(0, ' + str(to) + ');')
+        return to
 
-    def get_following(self, username):
-        """Returns the username's list of followings."""
-        pass
+    def _get_follx(self, expected):
+        """Private method to get the js-stream-items representing users."""
+        errors = False
+        scroll = 0
+        ret = set()
+        while len(ret) < expected and not errors:
+            scroll = self._scroll_down(scroll)
+            elements = self.firefox.find_elements_by_class_name(
+                    'js-stream-item')
+            for element in elements:
+                ret.add(str(element.find_element_by_class_name(
+                    'ProfileCard').get_attribute('data-screen-name')))
+        return ret
+    
+    def get_num_followers(self, user):
+        """Returns the number of followers of user and stays in /followers."""
+        if self.loged_in:
+            if user == self.username:
+                self.firefox.get('https://twitter.com/followers')
+            else:
+                self.firefox.get('https://twitter.com/' + user + '/followers')
+            WebDriverWait(self.firefox, 10).until(
+                    ex_co.presence_of_element_located((By.CLASS_NAME,
+                                                       'AppContainer')))
+            # TODO: see when there are 25K or something
+            return  int(self.firefox.find_element_by_class_name(
+                'ProfileNav-item--followers').find_element_by_class_name(
+                    'ProfileNav-value').text)
+        else:
+            return None
+
+    def get_num_following(self, user):
+        """Returns the number of followings of user and stays in /following."""
+        if self.loged_in:
+            if user == self.username:
+                self.firefox.get('https://twitter.com/following')
+            else:
+                self.firefox.get('https://twitter.com/' + user + '/following')
+            WebDriverWait(self.firefox, 10).until(
+                 ex_co.presence_of_element_located((By.CLASS_NAME,
+                                                    'AppContainer')))
+            # TODO: see when there are 25K or something
+            return int(self.firefox.find_element_by_class_name(
+                'ProfileNav-item--following').find_element_by_class_name(
+                    'ProfileNav-value').text)
+        else:
+            return None
+    
+    def get_followers(self, user):
+        """Returns the username's set of followers."""
+        total_foll = self.get_num_followers(user)
+        return self._get_follx(total_foll)
+
+    def get_following(self, user):
+        """Returns the username's set of followings."""
+        total_foll = self.get_num_following(user)
+        return self._get_follx(total_foll)

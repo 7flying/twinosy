@@ -16,7 +16,7 @@ dir_graph = nx.DiGraph()
 dir_graph.add_node("user", account="@user")
 dir_graph.add_node("user-2", account="@user2")
 dir_graph.add_edge("user", "user-2")
-dir_graph.add_edge("user-2", "user")
+#dir_graph.add_edge("user-2", "user")
 
 pos = nx.graphviz_layout(dir_graph)
 nx.draw_networkx_nodes(dir_graph,pos,node_size=300,node_color='#9933FF',alpha=0.4)

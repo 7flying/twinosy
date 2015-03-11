@@ -4,21 +4,21 @@ import matplotlib.pyplot as plt
 
 class GraphGenerator(object):
     """Generates graphs"""
-    def __init__(self, username, followers=[], following=[]):
+    def __init__(self, username, followers=set(), following=set()):
         self.username = username
         self.followers = followers
         self.following = following
         self.graph = nx.DiGraph()
 
-    def generate_follows(self):
+    def generate_follows_graph(self):
         """Generates a graph taking into account the followers and following."""
         self.graph.add_node(self.username)
-        for unique in set(self.followers + self.following):
+        for unique in self.followers | self.following:
             self.graph.add_node(unique)
         for user in self.followers:
-            self.graph.add_node(user, self.username)
+            self.graph.add_edge(user, self.username)
         for user in self.following:
-            self.graph.add_node(self.username, user)
+            self.graph.add_edge(self.username, user)
 
     def paint(self):
         """Draws the graph."""
@@ -30,3 +30,10 @@ class GraphGenerator(object):
         nx.draw_networkx_labels(self.graph,pos,fontsize=14)
         plt.axis('off')
         plt.show()
+
+if __name__ == '__main__':
+    followers = set(['one', 'two', 'three', 'four'])
+    following = set(['one', 'tree', 'five', 'nine', 'eleven'])
+    graph = GraphGenerator('USER', followers, following)
+    graph.generate_follows_graph()
+    graph.paint()
