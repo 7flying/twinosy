@@ -67,9 +67,9 @@ class Twitter(object):
             if limit and limit < expected:
                 expected = limit
             config.print_same_line("Processing...", True)
-            while len(ret) < expected and error < 4:
-                soup = BeautifulSoup(self.firefox.page_source, "lxml")
+            while len(ret) < expected and error < 30:
                 scroll = self._scroll_down(scroll)
+                soup = BeautifulSoup(self.firefox.page_source, "lxml")
                 elements_soup = soup.find_all(class_='js-stream-item')
                 ret.update(str(element.find_all(class_='ProfileCard')[0]
                                ['data-screen-name']) for element in elements_soup)
@@ -77,7 +77,11 @@ class Twitter(object):
                 if now != previous:
                     previous = now
                     config.print_same_line(str(now) + "%..")
+                    error = 0
+                else:
                     error += 1
+                if error % 10 == 0:
+                    self.firefox.refresh()
             config.print_end()
         return ret
     
