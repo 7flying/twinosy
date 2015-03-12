@@ -80,8 +80,6 @@ class Twitter(object):
                     error = 0
                 else:
                     error += 1
-                if error % 10 == 0:
-                    self.firefox.refresh()
             config.print_end()
         return ret
     
@@ -95,15 +93,19 @@ class Twitter(object):
             WebDriverWait(self.firefox, 10).until(
                     ex_co.presence_of_element_located((By.CLASS_NAME,
                                                        'AppContainer')))
-            number = self.firefox.find_element_by_class_name(
-                'ProfileNav-item--followers').find_element_by_class_name(
-                    'ProfileNav-value').text
-            if 'K' in number or 'M' in number:
-                return None
-            else:
-                number = number.replace(',', '')
-                config.print_(user + " has " + str(number) + " followers")
-                return int(number)
+            try:
+                number = self.firefox.find_element_by_class_name(
+                    'ProfileNav-item--followers').find_element_by_class_name(
+                        'ProfileNav-value').text
+                if 'K' in number or 'M' in number:
+                    return None
+                else:
+                    number = number.replace(',', '')
+                    config.print_(user + " has " + str(number) + " followers")
+                    return int(number)
+            except NoSuchElementException:
+                config.print_("It seems that " + user + " hasn't followers.")
+                return 0
         else:
             return None
 
@@ -117,15 +119,19 @@ class Twitter(object):
             WebDriverWait(self.firefox, 10).until(
                  ex_co.presence_of_element_located((By.CLASS_NAME,
                                                     'AppContainer')))
-            number = self.firefox.find_element_by_class_name(
-                'ProfileNav-item--following').find_element_by_class_name(
-                    'ProfileNav-value').text
-            if 'K' in number or 'M' in number:
-                return None
-            else:
-                number = number.replace(',', '')
-                config.print_(user + " has " + str(number) + " following")
-                return int(number)
+            try:
+                number = self.firefox.find_element_by_class_name(
+                    'ProfileNav-item--following').find_element_by_class_name(
+                        'ProfileNav-value').text
+                if 'K' in number or 'M' in number:
+                    return None
+                else:
+                    number = number.replace(',', '')
+                    config.print_(user + " has " + str(number) + " following")
+                    return int(number)
+            except NoSuchElementException:
+                config.print_("It seems that " + user + " is not following anyone.")
+                return 0
         else:
             return None
     
