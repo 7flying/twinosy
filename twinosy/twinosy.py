@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 import time
+from sys import argv
 from graphs import GraphGenerator
 from twitter import Twitter
 import config
 
 if __name__ == '__main__':
     time1 = time.time()
-    twitter = Twitter('', '')
+    twitter = Twitter(argv[1], argv[2])
     twitter._login()
-    user = 'Seven_Flying'
+    user = ''
     following = twitter.get_following(user)
     followers = twitter.get_followers(user)
+    print following, followers
     user2 = ''
     following2 = twitter.get_following(user2, 100)
     followers2 = twitter.get_followers(user2, 100)

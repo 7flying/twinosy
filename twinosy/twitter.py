@@ -86,12 +86,15 @@ class Twitter(object):
             WebDriverWait(self.firefox, 10).until(
                     ex_co.presence_of_element_located((By.CLASS_NAME,
                                                        'AppContainer')))
-            # TODO: see when there are 25K or something
-            number = int(self.firefox.find_element_by_class_name(
+            number = self.firefox.find_element_by_class_name(
                 'ProfileNav-item--followers').find_element_by_class_name(
-                    'ProfileNav-value').text)
-            config.print_(user + " has " + str(number) + " followers")
-            return number
+                    'ProfileNav-value').text
+            if 'K' or 'M' in number:
+                return None
+            else:
+                number = number.replace(',', '')
+                config.print_(user + " has " + str(number) + " followers")
+                return int(number)
         else:
             return None
 
@@ -105,12 +108,15 @@ class Twitter(object):
             WebDriverWait(self.firefox, 10).until(
                  ex_co.presence_of_element_located((By.CLASS_NAME,
                                                     'AppContainer')))
-            # TODO: see when there are 25K or something
-            number = int(self.firefox.find_element_by_class_name(
+            number = self.firefox.find_element_by_class_name(
                 'ProfileNav-item--following').find_element_by_class_name(
-                    'ProfileNav-value').text)
-            config.print_(user + " has " + str(number) + " following")
-            return number
+                    'ProfileNav-value').text
+            if 'K' or 'M' in number:
+                return None
+            else:
+                number = number.replace(',', '')
+                config.print_(user + " has " + str(number) + " following")
+                return int(number)
         else:
             return None
     
@@ -118,10 +124,10 @@ class Twitter(object):
         """Returns the username's set of followers."""
         config.print_("Processing get_followers of " + user)
         total_foll = self.get_num_followers(user)
-        return self._get_follx(total_foll, limit)
+        return self._get_follx(total_foll, limit) if total_foll != None else set()
 
     def get_following(self, user, limit=False):
         """Returns the username's set of followings."""
         config.print_("Processing get_following of " + user)
         total_foll = self.get_num_following(user)
-        return self._get_follx(total_foll, limit)
+        return self._get_follx(total_foll, limit) if total_foll != None else set()
