@@ -58,17 +58,22 @@ class Twitter(object):
 
     def _get_follx(self, expected, limit):
         """Private method to get the js-stream-items representing users."""
-        scroll = 0
+        scroll = previous = 0
         ret = set()
         if limit:
             expected = limit
+        config.print_same_line("Processing...", True)
         while len(ret) < expected:
             soup = BeautifulSoup(self.firefox.page_source, "lxml")
             scroll = self._scroll_down(scroll)
             elements_soup = soup.find_all(class_='js-stream-item')
             ret.update(str(element.find_all(class_='ProfileCard')[0]
                            ['data-screen-name']) for element in elements_soup)
-            config.print_("\t" + str(len(ret)) + "/" + str(expected))
+            now = len(ret) * 100 / expected
+            if now != previous:
+                previous = now
+                config.print_same_line(str(now) + "%..")
+        config.print_end()
         return ret
     
     def get_num_followers(self, user):
