@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 class GraphGenerator(object):
     """Generates graphs"""
-    def __init__(self, username, followers=set(), following=set()):
+    def __init__(self, username=None, followers=set(), following=set()):
         self.username = username
         self.followers = followers
         self.following = following
@@ -15,12 +15,31 @@ class GraphGenerator(object):
         self.generate_follows_graph(self.username, self.following, self.followers)
 
     def generate_follows_graph(self, username, following, followers):
+        """Generates the following-followers graph."""
+        self.generate_folowing_graph(username, following)
+        self.generate_followers_graph(username, followers)
+
+    def generate_following_graph(self, username, following):
+        """Generates the graph from a user to its followings."""
         self.graph.add_node(username)
-        for unique in followers | following:
-            self.graph.add_node(unique)
-        for user in followers:
-            self.graph.add_edge(user, username)
         for user in following:
+            self.graph.add_node(user)
+            self.graph.add_edge(username, user)
+            
+    def generate_followers_graph(self, username, followers):
+        """Generates a graph from a user to its followers."""
+        self.graph.add_node(username)
+        for user in followers:
+            self.graph.add_node(user)
+            self.graph.add_edge(user, username)
+
+    def generate_follows_intersect_graph(self, username, following, followers):
+        """Generates the intersection graph of followers and following."""
+        interset = following & followers
+        self.graph.add_node(username)
+        for user in interset:
+            self.graph.add_node(user)
+            self.graph.add_edge(user, username)
             self.graph.add_edge(username, user)
 
     def paint(self):
@@ -34,9 +53,3 @@ class GraphGenerator(object):
         plt.axis('off')
         plt.show()
 
-if __name__ == '__main__':
-    followers = set(['one', 'two', 'three', 'four'])
-    following = set(['one', 'tree', 'five', 'nine', 'eleven'])
-    graph = GraphGenerator('USER', followers, following)
-    graph.generate_my_follows_graph()
-    graph.paint()

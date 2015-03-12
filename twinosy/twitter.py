@@ -4,12 +4,14 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ex_co
+from bs4 import BeautifulSoup
+import config
 
 MAIN_URL = "https://twitter.com"
 
 class Twitter(object):
     """Crawls Twitter"""
-
+    
     def __init__(self, username=None, password=None):
         self.loged_in = False
         self.firefox = webdriver.Firefox()
@@ -36,7 +38,6 @@ class Twitter(object):
                 except NoSuchElementException, e:
                     print "Exception %s" % e.args[0]
             else:
-                
                 print "some error"
 
     def _sign_out(self):
@@ -51,27 +52,23 @@ class Twitter(object):
 
     def _scroll_down(self, to):
         """Scrolls down to the specified value, returns expected position. """
-        to += 5500
+        to += 4500
         self.firefox.execute_script('scroll(0, ' + str(to) + ');')
         return to
 
     def _get_follx(self, expected, limit):
         """Private method to get the js-stream-items representing users."""
-        errors = False
-        scroll = previous = 0
+        scroll = 0
         ret = set()
         if limit:
             expected = limit
-        while len(ret) < expected and not errors:
+        while len(ret) < expected:
+            soup = BeautifulSoup(self.firefox.page_source, "lxml")
             scroll = self._scroll_down(scroll)
-            elements = self.firefox.find_elements_by_class_name(
-                    'js-stream-item')
-            ret.update(set(str(element.find_element_by_class_name(
-                    'ProfileCard').get_attribute(
-                        'data-screen-name')) for element in elements))
-            if previous >= len(ret):
-                errors = True
-                print "[ ERROR ] The followx aren't updating"
+            elements_soup = soup.find_all(class_='js-stream-item')
+            ret.update(str(element.find_all(class_='ProfileCard')[0]
+                           ['data-screen-name']) for element in elements_soup)
+            config.print_("\t" + str(len(ret)) + "/" + str(expected))
         return ret
     
     def get_num_followers(self, user):
@@ -85,9 +82,11 @@ class Twitter(object):
                     ex_co.presence_of_element_located((By.CLASS_NAME,
                                                        'AppContainer')))
             # TODO: see when there are 25K or something
-            return  int(self.firefox.find_element_by_class_name(
+            number = int(self.firefox.find_element_by_class_name(
                 'ProfileNav-item--followers').find_element_by_class_name(
                     'ProfileNav-value').text)
+            config.print_(user + " has " + str(number) + " followers")
+            return number
         else:
             return None
 
@@ -102,18 +101,22 @@ class Twitter(object):
                  ex_co.presence_of_element_located((By.CLASS_NAME,
                                                     'AppContainer')))
             # TODO: see when there are 25K or something
-            return int(self.firefox.find_element_by_class_name(
+            number = int(self.firefox.find_element_by_class_name(
                 'ProfileNav-item--following').find_element_by_class_name(
                     'ProfileNav-value').text)
+            config.print_(user + " has " + str(number) + " following")
+            return number
         else:
             return None
     
     def get_followers(self, user, limit=False):
         """Returns the username's set of followers."""
+        config.print_("Processing get_followers of " + user)
         total_foll = self.get_num_followers(user)
         return self._get_follx(total_foll, limit)
 
     def get_following(self, user, limit=False):
         """Returns the username's set of followings."""
+        config.print_("Processing get_following of " + user)
         total_foll = self.get_num_following(user)
         return self._get_follx(total_foll, limit)
