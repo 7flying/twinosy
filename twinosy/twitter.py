@@ -89,7 +89,7 @@ class Twitter(object):
             number = self.firefox.find_element_by_class_name(
                 'ProfileNav-item--followers').find_element_by_class_name(
                     'ProfileNav-value').text
-            if 'K' or 'M' in number:
+            if 'K' in number or 'M' in number:
                 return None
             else:
                 number = number.replace(',', '')
@@ -111,7 +111,7 @@ class Twitter(object):
             number = self.firefox.find_element_by_class_name(
                 'ProfileNav-item--following').find_element_by_class_name(
                     'ProfileNav-value').text
-            if 'K' or 'M' in number:
+            if 'K' in number or 'M' in number:
                 return None
             else:
                 number = number.replace(',', '')
@@ -124,10 +124,14 @@ class Twitter(object):
         """Returns the username's set of followers."""
         config.print_("Processing get_followers of " + user)
         total_foll = self.get_num_followers(user)
+        if total_foll == None:
+            config.print_(" !!! Couldn't retrieve followers !!!")
         return self._get_follx(total_foll, limit) if total_foll != None else set()
 
     def get_following(self, user, limit=False):
         """Returns the username's set of followings."""
         config.print_("Processing get_following of " + user)
         total_foll = self.get_num_following(user)
+        if total_foll == None:
+            config.print_(" !!! Couldn't retrieve following !!!")
         return self._get_follx(total_foll, limit) if total_foll != None else set()
