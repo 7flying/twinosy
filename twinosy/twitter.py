@@ -58,22 +58,27 @@ class Twitter(object):
 
     def _get_follx(self, expected, limit):
         """Private method to get the js-stream-items representing users."""
-        scroll = previous = 0
+        scroll = previous = error = 0
         ret = set()
-        if limit:
-            expected = limit
-        config.print_same_line("Processing...", True)
-        while len(ret) < expected:
-            soup = BeautifulSoup(self.firefox.page_source, "lxml")
-            scroll = self._scroll_down(scroll)
-            elements_soup = soup.find_all(class_='js-stream-item')
-            ret.update(str(element.find_all(class_='ProfileCard')[0]
-                           ['data-screen-name']) for element in elements_soup)
-            now = len(ret) * 100 / expected
-            if now != previous:
-                previous = now
-                config.print_same_line(str(now) + "%..")
-        config.print_end()
+        try:
+            el = self.firefox.find_element_by_class_name('ProtectedTimeline')
+            config.print_("!!! Protected profile !!!")
+        except NoSuchElementException:
+            if limit and limit < expected:
+                expected = limit
+            config.print_same_line("Processing...", True)
+            while len(ret) < expected and error < 4:
+                soup = BeautifulSoup(self.firefox.page_source, "lxml")
+                scroll = self._scroll_down(scroll)
+                elements_soup = soup.find_all(class_='js-stream-item')
+                ret.update(str(element.find_all(class_='ProfileCard')[0]
+                               ['data-screen-name']) for element in elements_soup)
+                now = len(ret) * 100 / expected
+                if now != previous:
+                    previous = now
+                    config.print_same_line(str(now) + "%..")
+                    error += 1
+            config.print_end()
         return ret
     
     def get_num_followers(self, user):
@@ -125,7 +130,7 @@ class Twitter(object):
         config.print_("Processing get_followers of " + user)
         total_foll = self.get_num_followers(user)
         if total_foll == None:
-            config.print_(" !!! Couldn't retrieve followers !!!")
+            config.print_("!!! Couldn't retrieve followers !!!")
         return self._get_follx(total_foll, limit) if total_foll != None else set()
 
     def get_following(self, user, limit=False):
@@ -133,5 +138,5 @@ class Twitter(object):
         config.print_("Processing get_following of " + user)
         total_foll = self.get_num_following(user)
         if total_foll == None:
-            config.print_(" !!! Couldn't retrieve following !!!")
+            config.print_("!!! Couldn't retrieve following !!!")
         return self._get_follx(total_foll, limit) if total_foll != None else set()
