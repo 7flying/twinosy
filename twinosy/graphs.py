@@ -16,7 +16,7 @@ class GraphGenerator(object):
 
     def generate_follows_graph(self, username, following, followers):
         """Generates the following-followers graph."""
-        self.generate_folowing_graph(username, following)
+        self.generate_following_graph(username, following)
         self.generate_followers_graph(username, followers)
 
     def generate_following_graph(self, username, following):
