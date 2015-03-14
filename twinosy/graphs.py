@@ -53,3 +53,10 @@ class GraphGenerator(object):
         plt.axis('off')
         plt.show()
 
+    def save_dot(self, filename):
+        """Saves the graph as a dot file."""
+        nx.write_dot(self.graph, filename)
+
+    def load_dot(self, filename):
+        """Loads a graoh from a dor file."""
+        self.graph = nx.read_dot(filename)
