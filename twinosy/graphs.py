@@ -58,5 +58,5 @@ class GraphGenerator(object):
         nx.write_dot(self.graph, filename)
 
     def load_dot(self, filename):
-        """Loads a graoh from a dor file."""
+        """Loads a graph from a dot file."""
         self.graph = nx.read_dot(filename)

@@ -92,7 +92,7 @@ class DBManager(object):
         if user_id != None and other_id != None:
             cursor  = DBManager.conn.cursor()
             cursor.execute("SELECT * FROM Following" + 
-                           " WHERE user = ? AND  following = ?;",
+                           " WHERE user = ? AND follows = ?;",
                            (user_id, other_id))
             result = cursor.fetchone()
             return True if result != None else False
@@ -123,8 +123,8 @@ class DBManager(object):
                 if not self.is_account_created(foll):
                     self.insert_user(foll)
                 if not self.is_following(user, foll):
-                    foll_id = self.get_user_id(foll)
-                    cursor.execute("INSERT INTO Following (user, following)" +
+                    foll_id = self._get_user_id(foll)
+                    cursor.execute("INSERT INTO Following (user, follows)" +
                                    " VALUES (?, ?);", (user_id, foll_id))
                     DBManager.conn.commit()
                     #config.print_("Added following: " + foll + " to: " + user)
