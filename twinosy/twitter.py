@@ -11,6 +11,7 @@ MAIN_URL = "https://twitter.com"
 
 class Twitter(object):
     """Crawls Twitter"""
+    MAX_ERRORS_USER = 30
     
     def __init__(self, username=None, password=None):
         self.loged_in = False
@@ -56,31 +57,40 @@ class Twitter(object):
         self.firefox.execute_script('scroll(0, ' + str(to) + ');')
         return to
 
-    def _get_follx(self, expected, limit):
-        """Private method to get the js-stream-items representing users."""
-        scroll = previous = error = 0
-        ret = set()
+    def _is_timeline_protected(self):
+        """Checks whether the current user page is protected.
+        Expcects to be in a user page."""
+        ret = True
         try:
             el = self.firefox.find_element_by_class_name('ProtectedTimeline')
             config.print_("!!! Protected profile !!!")
         except NoSuchElementException:
-            if limit and limit < expected:
-                expected = limit
-            config.print_same_line("Processing...", True)
-            while len(ret) < expected and error < 30:
-                scroll = self._scroll_down(scroll)
-                soup = BeautifulSoup(self.firefox.page_source, "lxml")
-                elements_soup = soup.find_all(class_='js-stream-item')
-                ret.update(str(element.find_all(class_='ProfileCard')[0]
-                               ['data-screen-name']) for element in elements_soup)
-                now = len(ret) * 100 / expected
-                if now != previous:
-                    previous = now
-                    config.print_same_line(str(now) + "%..")
-                    error = 0
-                else:
-                    error += 1
-            config.print_end()
+            ret = False
+        return ret
+            
+    def _get_follx(self, expected, limit):
+        """Private method to get the js-stream-items representing users."""
+        if self._is_timeline_protected():
+            return set()
+        scroll = previous = error = 0
+        ret = set()
+        if limit and limit < expected:
+            expected = limit
+        config.print_same_line("Processing...", True)
+        while len(ret) < expected and error < Twitter.MAX_ERRORS_USER:
+            scroll = self._scroll_down(scroll)
+            soup = BeautifulSoup(self.firefox.page_source, "lxml")
+            elements_soup = soup.find_all(class_='js-stream-item')
+            ret.update(str(element.find_all(class_='ProfileCard')[0]
+                           ['data-screen-name']) for element in elements_soup)
+            now = len(ret) * 100 / expected
+            if now != previous:
+                previous = now
+                config.print_same_line(str(now) + "%..")
+                error = 0
+            else:
+                error += 1
+        config.print_end()
         return ret
     
     def get_num_followers(self, user):
@@ -130,11 +140,12 @@ class Twitter(object):
                     config.print_(user + " has " + str(number) + " following")
                     return int(number)
             except NoSuchElementException:
-                config.print_("It seems that " + user + " is not following anyone.")
+                config.print_("It seems that " + user + " is not following \
+                anyone.")
                 return 0
         else:
             return None
-    
+
     def get_followers(self, user, limit=False):
         """Returns the username's set of followers."""
         config.print_("Processing get_followers of " + user)
@@ -150,3 +161,74 @@ class Twitter(object):
         if total_foll == None:
             config.print_("!!! Couldn't retrieve following !!!")
         return self._get_follx(total_foll, limit) if total_foll != None else set()
+
+    def get_favourite_count(self, user):
+        """Returns the number of favourited tweets by a user."""
+        self.firefox.get('https://twitter.com/' + user)
+        try:
+            WebDriverWait(self.firefox, 10).until(
+                ex_co.presence_of_element_located(
+                    (By.CLASS_NAME, 'AppContainer')))
+            number = self.firefox.find_element_by_class_name(
+                'ProfileNav-item--favorites').find_element_by_class_name(
+                    'ProfileNav-value').text
+            if 'K' in number or 'M' in number:
+                return None
+            else:
+                number = number.replace(',', '')
+                config.print_(user + " has " + str(number) + " favourites")
+                return int(number)
+        except NoSuchElementException:
+            return None
+
+    def get_favourite_counts_by_user(self, user, limit=False):
+        """Returns a dict with the number of favourites done by a user
+        to others."""
+        if self.loged_in:
+            num = self.get_favourite_count(user)
+            if user == self.username:
+                self.firefox.get('https://twitter.com/favorites')
+            else:
+                self.firefox.get('https://twitter.com/' + user + '/favorites')
+            
+            WebDriverWait(self.firefox, 10).until(
+                ex_co.presence_of_element_located(
+                    (By.CLASS_NAME, 'AppContainer')))
+            if num == None:
+                config.print_("!!! Couldn't retrieve the favourites !!!")
+            return self._get_favs_who(num, limit) if num != None else {}
+    
+    def _get_favs_who(self, expected, limit):
+        """Private method to process the fav tweets."""
+        if self._is_timeline_protected():
+            return None
+        scroll = previous = error = 0
+        ret = {}
+        processed = set()
+        if limit and limit < expected:
+            expected = limit
+        config.print_same_line("Processing...", True)
+        while len(processed) < expected and error < Twitter.MAX_ERRORS_USER:
+            scroll = self._scroll_down(scroll)
+            soup = BeautifulSoup(self.firefox.page_source, "lxml")
+            tweets = [element.find_all(class_='ProfileTweet')[0]
+                      for element in soup.find_all(class_='js-stream-item')]
+            for tweet in tweets:
+                # Check tweet id
+                tweet_id = int(tweet['data-item-id'])
+                if tweet_id not in processed:
+                    processed.add(tweet_id)
+                    user = tweet['data-screen-name']
+                    if user not in ret:
+                        ret[user] = 0
+                    ret[user] += 1
+            now = len(processed) * 100 / expected
+            if now != previous:
+                previous = now
+                config.print_same_line(str(now) + "%..")
+                error = 0
+            else:
+                error += 1
+        config.print_end()
+        return ret
+
