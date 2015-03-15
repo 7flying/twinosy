@@ -1,9 +1,11 @@
 import time
+import re
+from os import listdir
 from random import randint
 import networkx as nx
 import matplotlib.pyplot as plt
-
 from graph_tool.all import *
+from manager import DBManager
 
 def test1():
     graph = nx.Graph()
@@ -83,6 +85,37 @@ def test4():
         if i != 0:
             g.add_edge(i, i-1)
     graph_draw(g, vertex_text=label, output_size=(2000,2000),output="test4.png")
+
+def get_users(filename):
+    f = open(filename, 'r')
+    contents = [x for x in (f.read()).split(',') if len(x) > 0]
+    f.close()
+    return contents
+
+def files_to_db():
+    manager = DBManager()
+    manager.create_db('test.sqlite')
+    manager.connect()
+    files = listdir('files')
+    print "%d files found" % len(files)
+    matcher_followers = re.compile("^.+_followers\.txt$")
+    matcher_following = re.compile("^.+_following\.txt$")
+    for f in files:
+        if matcher_followers.match(f):
+           users = get_users('files/' + f)
+           if not manager.is_account_created(f[0:f.rfind('_')]):
+               manager.insert_user(f[0:f.rfind('_')])
+           manager.insert_followers(f[0:f.rfind('_')], users)
+        else:
+            if matcher_following.match(f):
+                users = get_users('files/' + f)
+                if not manager.is_account_created(f[0:f.rfind('_')]):
+                    manager.insert_user(f[0:f.rfind('_')])
+                manager.insert_followers(f[0:f.rfind('_')], users)
+            else:
+                print "ERRRRRRRROR with", f
+                
+    manager.disconnect()
 
 
 if __name__ == '__main__':

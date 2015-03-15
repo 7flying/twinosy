@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 from os.path import isfile
-from os import listdir
-import re
 import sqlite3 as lite
 import config
 
@@ -35,7 +33,9 @@ class DBManager(object):
         else:
             config.print_("The database is already created.")
 
-    def connect(self):
+    def connect(self,name=None):
+        if name != None:
+            self.name = name
         if DBManager.conn == None:
             try:
                 DBManager.conn = lite.connect(self.name)
@@ -53,6 +53,13 @@ class DBManager(object):
         cursor.execute("INSERT INTO User (account) VALUES (?);", (account,))
         DBManager.conn.commit()
         config.print_("User: " + account + " added")
+
+    def _get_user_account(self, user_id):
+        """Given a user's id retrieves the account name."""
+        cursor = DBManager.conn.cursor()
+        cursor.execute("SELECT account FROM User WHERE id = ?;", (user_id,))
+        result = cursor.fetchone()
+        return result[0] if result != None and len(result) > 0 else None
 
     def _get_user_id(self, account):
         """Returns the user id from an account name."""
@@ -105,7 +112,7 @@ class DBManager(object):
                     cursor.execute("INSERT INTO Followers (user, follower)" +
                                    " VALUES (?, ?);", (user_id, foll_id))
                     DBManager.conn.commit()
-                    config.print_("Added follower: " + foll + " to: " + user)
+                    #config.print_("Added follower: " + foll + " to: " + user)
 
     def insert_following(self, user, following):
         """Inserts the accounts a user is following to."""
@@ -120,37 +127,53 @@ class DBManager(object):
                     cursor.execute("INSERT INTO Following (user, following)" +
                                    " VALUES (?, ?);", (user_id, foll_id))
                     DBManager.conn.commit()
-                    config.print_("Added following: " + foll + " to: " + user)
+                    #config.print_("Added following: " + foll + " to: " + user)
 
-def get_users(filename):
-    f = open(filename, 'r')
-    contents = [x for x in (f.read()).split(',') if len(x) > 0]
-    f.close()
-    return contents
+    def get_users(self):
+        """Retrieves all the users from the db."""
+        cursor = DBManager.conn.execute("SELECT id, account FROM User;")
+        ret = cursor.fetchall()
+        cursor.close()
+        return ret
 
-
-if __name__ == '__main__':
-    manager = DBManager()
-    manager.create_db('test.sqlite')
-    manager.connect()
-    files = listdir('files')
-    print "%d files found" % len(files)
-    matcher_followers = re.compile("^.+_followers\.txt$")
-    matcher_following = re.compile("^.+_following\.txt$")
-    for f in files:
-        if matcher_followers.match(f):
-           users = get_users('files/' + f)
-           if not manager.is_account_created(f[0:f.rfind('_')]):
-               manager.insert_user(f[0:f.rfind('_')])
-           manager.insert_followers(f[0:f.rfind('_')], users)
+    def get_followers(self, user):
+        """Retrieves all the followers from a user."""
+        follower_ids = self._get_followers_ids(user)
+        if follower_ids != None:
+            ret = [self._get_user_account(x[0])
+                   for x in follower_ids if len(x) == 1]
+            return ret
+            
+    def _get_followers_ids(self, user):
+        """Retrieves the follower ids from a user."""
+        user_id = self._get_user_id(user)
+        if user_id != None:
+            cursor = DBManager.conn.execute("SELECT follower FROM Followers" +
+                                            " WHERE user = ?;", (user_id,))
+            ret = cursor.fetchall()
+            cursor.close()
+            return ret
         else:
-            if matcher_following.match(f):
-                users = get_users('files/' + f)
-                if not manager.is_account_created(f[0:f.rfind('_')]):
-                    manager.insert_user(f[0:f.rfind('_')])
-                manager.insert_followers(f[0:f.rfind('_')], users)
-            else:
-                print "ERRRRRRRROR with", f
+            return None
+    
+    def get_following(self, user):
+        """Retrieves all the following from a user."""
+        following_ids = self._get_following_ids(user)
+        if following_ids != None:
+            ret = [self._get_user_account(x[0])
+                   for x in following_ids if len(x) == 1]
+            return ret
+        else:
+            return None
 
-    manager.disconnect()
-
+    def _get_following_ids(self, user):
+        """Retrieves the following ids from a user."""
+        user_id = self._get_user_id(user)
+        if user_id != None:
+            cursor = DBManager.conn.execute("SELECT follows FROM Following" +
+                                             " WHERE user = ?;", (user_id,))
+            ret = cursor.fetchall()
+            cursor.close()
+            return ret
+        else:
+            return None
