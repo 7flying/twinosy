@@ -29,7 +29,8 @@ class Twitter(object):
                 try:
                     self.firefox.find_element_by_id('signin-email').send_keys(
                         self.username)
-                    input_pass = self.firefox.find_element_by_id('signin-password')
+                    input_pass = self.firefox.find_element_by_id(
+                        'signin-password')
                     input_pass.send_keys(self.password)
                     input_pass.submit()
                     WebDriverWait(self.firefox, 10).until(
@@ -52,7 +53,7 @@ class Twitter(object):
                 print "Exception %s" % e.args[0]
 
     def _scroll_down(self, to):
-        """Scrolls down to the specified value, returns expected position. """
+        """Scrolls down to the specified value, returns expected position."""
         to += 4500
         self.firefox.execute_script('scroll(0, ' + str(to) + ');')
         return to
@@ -232,3 +233,12 @@ class Twitter(object):
         config.print_end()
         return ret
 
+    def get_user_bio(self, user):
+        """Returns a user's profile description."""
+        self.firefox.get('https://twitter.com/' + user)
+        WebDriverWait(self.firefox, 10).until(ex_co.presence_of_element_located(
+            (By.CLASS_NAME, 'AppContainer')))
+        soup = BeautifulSoup(self.firefox.page_source, "lxml")
+        temp = soup.find_all(class_='ProfileHeaderCard')
+        return temp[0].find_all(class_='ProfileCard-bio')[0] if len(temp) > 0 else None
+            
