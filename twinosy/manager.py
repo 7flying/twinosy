@@ -16,7 +16,9 @@ class DBManager(object):
             cursor.execute(
             """CREATE TABLE User (
                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-               account TEXT NOT NULL UNIQUE);""")
+               account TEXT NOT NULL UNIQUE,
+               description TEXT,
+               official INTEGER DEFAULT 0 CHECK(official=0 OR official=1));""")
             cursor.execute(
             """CREATE TABLE Following (
                user INTEGER NOT NULL REFERENCES User (id) ON DELETE CASCADE,
@@ -50,9 +52,28 @@ class DBManager(object):
     def insert_user(self, account):
         """Inserts a user."""
         cursor = DBManager.conn.cursor()
-        cursor.execute("INSERT INTO User (account) VALUES (?);", (account,))
+        cursor.execute("INSERT INTO User (account) VALUES (?) ;", (account,))
         DBManager.conn.commit()
         config.print_("User: " + account + " added")
+
+    def insert_bio(self, user, description):
+        """Inserts a bio to the user."""
+        if  description != None and len(description) > 0:
+            cursor = DBManager.conn.cursor()
+            user_id = self._get_user_id(user)
+            if user_id != None:
+                cursor.execute("UPDATE User SET description=? WHERE id =?;",
+                               (description, user_id))
+                config.print_("Bio of " + user + " added")
+
+    def insert_is_official(self, user, is_official):
+        """Sets whether the user account is official or not."""
+        user_id = self._get_user_id(user)
+        if user_id != None:
+            cursor = DBManager.conn.cursor()
+            cursor.execute("UPDATE User SET official=? WHERE id=?;"
+                           (1 if is_official else 0, user_id))
+            config.print_("Added official=" + str(is_official) + " to " + user)
 
     def _get_user_account(self, user_id):
         """Given a user's id retrieves the account name."""
@@ -175,5 +196,28 @@ class DBManager(object):
             ret = cursor.fetchall()
             cursor.close()
             return ret
+        else:
+            return None
+
+    def get_user_bio(self, user):
+        """Retrieves the bio of a user."""
+        user_id = self._get_user_id(user)
+        ret = None
+        if user_id != None:
+            cursor = DBManager.conn.execute("SELECT description FROM User"
+                                            + " WHERE user = ?;", (user_id,))
+            ret = cursor.fetchone()
+            cursor.close()
+        return ret
+
+    def is_official(self, user):
+        """Checks whether the user account is official or not."""
+        user_id = self._get_user_id(user)
+        if user_id != None:
+            cursor = DBManager.conn.execute("SELECT official FROM User"
+                                            + " WHERE user = ?;", (user_id,))
+            ret = cursor.fetchone()
+            cursor.close()
+            return ret == 1
         else:
             return None

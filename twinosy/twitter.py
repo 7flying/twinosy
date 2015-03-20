@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ex_co
@@ -37,7 +37,7 @@ class Twitter(object):
                         ex_co.presence_of_element_located(
                             (By.ID, 'user-dropdown-toggle')))
                     self.loged_in = True
-                except NoSuchElementException, e:
+                except Exception, e:
                     print "Exception %s" % e.args[0]
             else:
                 print "some error"
@@ -101,10 +101,10 @@ class Twitter(object):
                 self.firefox.get('https://twitter.com/followers')
             else:
                 self.firefox.get('https://twitter.com/' + user + '/followers')
-            WebDriverWait(self.firefox, 10).until(
+            try:
+                WebDriverWait(self.firefox, 10).until(
                     ex_co.presence_of_element_located((By.CLASS_NAME,
                                                        'AppContainer')))
-            try:
                 number = self.firefox.find_element_by_class_name(
                     'ProfileNav-item--followers').find_element_by_class_name(
                         'ProfileNav-value').text
@@ -114,7 +114,7 @@ class Twitter(object):
                     number = number.replace(',', '')
                     config.print_(user + " has " + str(number) + " followers")
                     return int(number)
-            except NoSuchElementException:
+            except (NoSuchElementException, TimeoutException):
                 config.print_("It seems that " + user + " hasn't followers.")
                 return 0
         else:
@@ -127,10 +127,10 @@ class Twitter(object):
                 self.firefox.get('https://twitter.com/following')
             else:
                 self.firefox.get('https://twitter.com/' + user + '/following')
-            WebDriverWait(self.firefox, 10).until(
-                 ex_co.presence_of_element_located((By.CLASS_NAME,
-                                                    'AppContainer')))
             try:
+                WebDriverWait(self.firefox, 10).until(
+                    ex_co.presence_of_element_located((By.CLASS_NAME,
+                                                       'AppContainer')))
                 number = self.firefox.find_element_by_class_name(
                     'ProfileNav-item--following').find_element_by_class_name(
                         'ProfileNav-value').text
@@ -140,7 +140,7 @@ class Twitter(object):
                     number = number.replace(',', '')
                     config.print_(user + " has " + str(number) + " following")
                     return int(number)
-            except NoSuchElementException:
+            except (NoSuchElementException, TimeoutException):
                 config.print_("It seems that " + user + " is not following \
                 anyone.")
                 return 0
@@ -179,7 +179,7 @@ class Twitter(object):
                 number = number.replace(',', '')
                 config.print_(user + " has " + str(number) + " favourites")
                 return int(number)
-        except NoSuchElementException:
+        except (NoSuchElementException, TimeoutException):
             return None
 
     def get_favourite_counts_by_user(self, user, limit=False):
@@ -236,9 +236,44 @@ class Twitter(object):
     def get_user_bio(self, user):
         """Returns a user's profile description."""
         self.firefox.get('https://twitter.com/' + user)
-        WebDriverWait(self.firefox, 10).until(ex_co.presence_of_element_located(
-            (By.CLASS_NAME, 'AppContainer')))
-        soup = BeautifulSoup(self.firefox.page_source, "lxml")
-        temp = soup.find_all(class_='ProfileHeaderCard')
-        return temp[0].find_all(class_='ProfileHeaderCard-bio')[0].get_text() if len(temp) > 0 else None
-            
+        try:
+            WebDriverWait(self.firefox, 10).until(
+                ex_co.presence_of_element_located(
+                    (By.CLASS_NAME, 'AppContainer')))
+            soup = BeautifulSoup(self.firefox.page_source, "lxml")
+            temp = soup.find_all(class_='ProfileHeaderCard')
+            return temp[0].find_all(
+                class_='ProfileHeaderCard-bio')[0].get_text()\
+                if len(temp) > 0 else None
+        except (NoSuchElementException, TimeoutException):
+            return None
+
+    def _get_badges(self, user):
+        """Returns the badges of a user."""
+        self.firefox.get('https://twitter.com/' + user)
+        try:
+            WebDriverWait(self.firefox, 10).until(
+                ex_co.presence_of_element_located(
+                    (By.CLASS_NAME, 'AppContainer')))
+            soup = BeautifulSoup(self.firefox.page_source, "lxml")
+            temp = soup.find_all(class_='ProfileHeaderCard')
+            if len(temp) > 0:
+                badges = temp[0].find_all(class_=
+                                          'ProfileHeaderCard-name')[0].find_all(
+                                              class_='ProfileHeaderCard-badges')
+                if badges:
+                    ret = [x['title'] for x \
+                           in badges[0].find_all(class_='js-tooltip')]
+                    return ret
+                else:
+                    return False
+        except (NoSuchElementException, TimeoutException):
+            return None
+
+    def is_official(self, user):
+        """Checks whether the specified account is official or not."""
+        ret = self._get_badges(user)
+        if ret == None:
+            return False
+        else:
+            return ret if type(ret) == bool else str('Verified account') in ret
