@@ -64,6 +64,7 @@ class DBManager(object):
             if user_id != None:
                 cursor.execute("UPDATE User SET description=? WHERE id =?;",
                                (description, user_id))
+                DBManager.conn.commit()
                 config.print_("Bio of " + user + " added")
 
     def insert_is_official(self, user, is_official):
@@ -71,8 +72,9 @@ class DBManager(object):
         user_id = self._get_user_id(user)
         if user_id != None:
             cursor = DBManager.conn.cursor()
-            cursor.execute("UPDATE User SET official=? WHERE id=?;"
+            cursor.execute("UPDATE User SET official=? WHERE id=?;",
                            (1 if is_official else 0, user_id))
+            DBManager.conn.commit()
             config.print_("Added official=" + str(is_official) + " to " + user)
 
     def _get_user_account(self, user_id):
@@ -205,7 +207,7 @@ class DBManager(object):
         ret = None
         if user_id != None:
             cursor = DBManager.conn.execute("SELECT description FROM User"
-                                            + " WHERE user = ?;", (user_id,))
+                                            + " WHERE id = ?;", (user_id,))
             ret = cursor.fetchone()
             cursor.close()
         return ret
@@ -215,7 +217,7 @@ class DBManager(object):
         user_id = self._get_user_id(user)
         if user_id != None:
             cursor = DBManager.conn.execute("SELECT official FROM User"
-                                            + " WHERE user = ?;", (user_id,))
+                                            + " WHERE id = ?;", (user_id,))
             ret = cursor.fetchone()
             cursor.close()
             return ret == 1

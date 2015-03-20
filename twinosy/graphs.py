@@ -12,35 +12,41 @@ class GraphGenerator(object):
 
     def generate_my_follows_graph(self):
         """Generates a graph taking into account the followers and following."""
-        self.generate_follows_graph(self.username, self.following, self.followers)
+        if self.username != None:
+            self.generate_follows_graph(self.username, self.following,
+                                        self.followers)
 
     def generate_follows_graph(self, username, following, followers):
         """Generates the following-followers graph."""
-        self.generate_following_graph(username, following)
-        self.generate_followers_graph(username, followers)
+        if username != None and followers != None and following != None:
+            self.generate_following_graph(username, following)
+            self.generate_followers_graph(username, followers)
 
     def generate_following_graph(self, username, following):
         """Generates the graph from a user to its followings."""
-        self.graph.add_node(username)
-        for user in following:
-            self.graph.add_node(user)
-            self.graph.add_edge(username, user)
+        if username != None and following != None:
+            self.graph.add_node(username)
+            for user in following:
+                self.graph.add_node(user)
+                self.graph.add_edge(username, user)
             
     def generate_followers_graph(self, username, followers):
         """Generates a graph from a user to its followers."""
-        self.graph.add_node(username)
-        for user in followers:
-            self.graph.add_node(user)
-            self.graph.add_edge(user, username)
+        if username != None and followers != None:
+            self.graph.add_node(username)
+            for user in followers:
+                self.graph.add_node(user)
+                self.graph.add_edge(user, username)
 
     def generate_follows_intersect_graph(self, username, following, followers):
         """Generates the intersection graph of followers and following."""
-        interset = following & followers
-        self.graph.add_node(username)
-        for user in interset:
-            self.graph.add_node(user)
-            self.graph.add_edge(user, username)
-            self.graph.add_edge(username, user)
+        if username != None and followers != None and following != None:
+            interset = following & followers
+            self.graph.add_node(username)
+            for user in interset:
+                self.graph.add_node(user)
+                self.graph.add_edge(user, username)
+                self.graph.add_edge(username, user)
 
     def paint(self):
         """Draws the graph."""
