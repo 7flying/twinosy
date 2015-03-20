@@ -240,5 +240,5 @@ class Twitter(object):
             (By.CLASS_NAME, 'AppContainer')))
         soup = BeautifulSoup(self.firefox.page_source, "lxml")
         temp = soup.find_all(class_='ProfileHeaderCard')
-        return temp[0].find_all(class_='ProfileCard-bio')[0] if len(temp) > 0 else None
+        return temp[0].find_all(class_='ProfileHeaderCard-bio')[0].get_text() if len(temp) > 0 else None
             
