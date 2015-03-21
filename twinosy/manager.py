@@ -68,9 +68,9 @@ class DBManager(object):
                 config.print_("Bio of " + user + " added")
 
     def insert_is_official(self, user, is_official):
-        """Sets whether the user account is official or not."""
+        """Sets whether the user account is official or not, requires bool."""
         user_id = self._get_user_id(user)
-        if user_id != None:
+        if user_id != None and type(is_official) == bool:
             cursor = DBManager.conn.cursor()
             cursor.execute("UPDATE User SET official=? WHERE id=?;",
                            (1 if is_official else 0, user_id))
@@ -166,6 +166,8 @@ class DBManager(object):
             ret = [self._get_user_account(x[0])
                    for x in follower_ids if len(x) == 1]
             return ret
+        else:
+            return set()
             
     def _get_followers_ids(self, user):
         """Retrieves the follower ids from a user."""
@@ -187,7 +189,7 @@ class DBManager(object):
                    for x in following_ids if len(x) == 1]
             return ret
         else:
-            return None
+            return set()
 
     def _get_following_ids(self, user):
         """Retrieves the following ids from a user."""
