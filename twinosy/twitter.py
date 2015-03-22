@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from sys import argv
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
@@ -238,6 +239,13 @@ class Twitter(object):
         """Returns the tweet-author-id from a js stream element."""
         temp = js_stream['data-user-id']
         return int(temp) if temp != None else None
+
+    def _get_tweet_time_date_js_stream(self, js_stream):
+        """Returns the tweet-timedate from a js stream element."""
+        temp = js_stream.find_all(class_='ProfileTweet-header')[0]
+        if temp != None:
+            timestamp = temp.find_all(class_='ProfileTweet-timestamp')
+            print timestamp['title']
     
     def _get_favs_who(self, expected, limit):
         """Private method to process the fav tweets."""
@@ -329,10 +337,20 @@ class Twitter(object):
                     scroll = previous = error = 0
                     ret = []
                     processed = set()
-                    while len(processed) < lastx:
+                    #while len(processed) < lastx:
+                    end = 1
+                    while end:
                         scroll = self._scroll_down(scroll)
-                        tweets = self._get_js_stream()
+                        soup = BeautifulSoup(self.firefox.page_source, "lxml")
+                        temp1 = soup.find_all(class_='js-stream-item')
+                        #print "TEMP-1", temp1
+                        for item in temp1:
+                            print item.find_all(class_='ProfileTweet')
+                            # TODO
+                        tweets =  []
+                        end = 0
                         for tweet in tweets:
+                            end = 0
                             tweet_id = self._get_tweet_id_js_stream(tweet)
                             if tweet_id != None:
                                 if tweet_id not in processed:
