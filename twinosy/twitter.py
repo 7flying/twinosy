@@ -162,6 +162,25 @@ class Twitter(object):
         if total_foll == None:
             config.print_("!!! Couldn't retrieve following !!!")
         return self._get_follx(total_foll, limit) if total_foll != None else set()
+    
+    def get_num_tweets(self, user):
+        """Returns the number of tweets a user has made."""
+        if user != None and len(user) > 0:
+            self.firefox.get('https://twitter.com/' + user)
+            try:
+                WebDriverWait(self.firefox, 10).until(
+                    ex_co.presence_of_element_located(
+                        (By.CLASS_NAME, 'AppContainer')))
+                count = self.firefox.find_element_by_class_name(
+                    'ProfileNav-item--tweets').find_element_by_tag_name(
+                        'a').get_attribute('title')
+                count = count.replace(',','')
+                index = count.find(' ')
+                return int(count[:index]) if index != -1 else int(count)
+            except (NoSuchElementException, TimeoutException):
+                return None
+        else:
+            return None
 
     def get_favourite_count(self, user):
         """Returns the number of favourited tweets by a user."""
@@ -198,6 +217,27 @@ class Twitter(object):
             if num == None:
                 config.print_("!!! Couldn't retrieve the favourites !!!")
             return self._get_favs_who(num, limit) if num != None else {}
+
+    def _get_js_stream(self):
+        """Returns the js-stream-items of the current page."""
+        soup = BeautifulSoup(self.firefox.page_source, "lxml")
+        tweets = [element.find_all(class_='ProfileTweet')[0]
+                  for element in soup.find_all(class_='js-stream-item')]
+        return tweets
+
+    def _get_tweet_id_js_stream(self, js_stream):
+        """Returns the tweet-id from a js stream element."""
+        temp = js_stream['data-item-id']
+        return int(temp) if temp != None else None
+
+    def _get_tweet_author_js_stream(self, js_stream):
+        """Returns the tweet-author from a js stream element."""
+        return js_stream['data-screen-name']
+
+    def _get_tweet_author_id_js_stream(self, js_stream):
+        """Returns the tweet-author-id from a js stream element."""
+        temp = js_stream['data-user-id']
+        return int(temp) if temp != None else None
     
     def _get_favs_who(self, expected, limit):
         """Private method to process the fav tweets."""
@@ -211,15 +251,13 @@ class Twitter(object):
         config.print_same_line("Processing...", True)
         while len(processed) < expected and error < Twitter.MAX_ERRORS_USER:
             scroll = self._scroll_down(scroll)
-            soup = BeautifulSoup(self.firefox.page_source, "lxml")
-            tweets = [element.find_all(class_='ProfileTweet')[0]
-                      for element in soup.find_all(class_='js-stream-item')]
+            tweets = self._get_js_stream()
             for tweet in tweets:
                 # Check tweet id
-                tweet_id = int(tweet['data-item-id'])
+                tweet_id = self._get_tweet_id_js_stream(tweet)
                 if tweet_id not in processed:
                     processed.add(tweet_id)
-                    user = tweet['data-screen-name']
+                    user = self._get_tweet_author_js_stream(tweet)
                     if user not in ret:
                         ret[user] = 0
                     ret[user] += 1
@@ -277,3 +315,30 @@ class Twitter(object):
             return False
         else:
             return ret if type(ret) == bool else str('Verified account') in ret
+
+    def get_tweets_timedates_last(self, user, lastx=50):
+        """Returns the last x tweet's publish time-date."""
+        if user != None:
+            num = self.get_num_tweets(user)
+            lastx = num if num < lastx else lastx
+            self.firefox.get('https://twitter.com/' + user)
+            try:
+                if self._is_timeline_protected():
+                    return None
+                else:
+                    scroll = previous = error = 0
+                    ret = []
+                    processed = set()
+                    while len(processed) < lastx:
+                        scroll = self._scroll_down(scroll)
+                        tweets = self._get_js_stream()
+                        for tweet in tweets:
+                            tweet_id = self._get_tweet_id_js_stream(tweet)
+                            if tweet_id != None:
+                                if tweet_id not in processed:
+                                    processed.add(tweet_id)
+                                    
+                                
+            except (NoSuchElementException, TimeoutException):
+                return None
+
