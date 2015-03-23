@@ -337,26 +337,25 @@ class Twitter(object):
                     scroll = previous = error = 0
                     ret = []
                     processed = set()
-                    #while len(processed) < lastx:
-                    end = 1
-                    while end:
+                    while len(processed) < lastx:
                         scroll = self._scroll_down(scroll)
                         soup = BeautifulSoup(self.firefox.page_source, "lxml")
-                        temp1 = soup.find_all(class_='js-stream-item')
-                        #print "TEMP-1", temp1
-                        for item in temp1:
-                            print item.find_all(class_='ProfileTweet')
-                            # TODO
-                        tweets =  []
-                        end = 0
+                        tweets = [x.find_all(class_='ProfileTweet')
+                                 for x in soup.find_all(class_='js-stream-item')]
                         for tweet in tweets:
-                            end = 0
-                            tweet_id = self._get_tweet_id_js_stream(tweet)
-                            if tweet_id != None:
-                                if tweet_id not in processed:
-                                    processed.add(tweet_id)
-                                    
-                                
+                            if len(tweet) > 0:
+                                tweet_id = self._get_tweet_id_js_stream(tweet[0])
+                                if tweet_id != None:
+                                    if tweet_id not in processed:
+                                        processed.add(tweet_id)
+                                        ret.append()
+                            else:
+                                error += 1
             except (NoSuchElementException, TimeoutException):
                 return None
 
+if __name__ == '__main__':
+    twitter = Twitter(argv[1], argv[2])
+    twitter._login()
+    twitter.get_tweets_timedates_last('')
+    twitter._sign_out()
