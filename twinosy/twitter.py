@@ -245,7 +245,7 @@ class Twitter(object):
         temp = js_stream.find_all(class_='ProfileTweet-header')[0]
         if temp != None:
             timestamp = temp.find_all(class_='ProfileTweet-timestamp')
-            print timestamp['title']
+            return timestamp[0]['title']
     
     def _get_favs_who(self, expected, limit):
         """Private method to process the fav tweets."""
@@ -255,6 +255,8 @@ class Twitter(object):
         ret = {}
         processed = set()
         if limit and limit < expected:
+            print "limit", limit
+            print "expected", expected
             expected = limit
         config.print_same_line("Processing...", True)
         while len(processed) < expected and error < Twitter.MAX_ERRORS_USER:
@@ -337,7 +339,8 @@ class Twitter(object):
                     scroll = previous = error = 0
                     ret = []
                     processed = set()
-                    while len(processed) < lastx:
+                    while len(processed) < lastx and \
+                      error < Twitter.MAX_ERRORS_USER:
                         scroll = self._scroll_down(scroll)
                         soup = BeautifulSoup(self.firefox.page_source, "lxml")
                         tweets = [x.find_all(class_='ProfileTweet')
@@ -348,14 +351,24 @@ class Twitter(object):
                                 if tweet_id != None:
                                     if tweet_id not in processed:
                                         processed.add(tweet_id)
-                                        ret.append()
-                            else:
-                                error += 1
+                                        timestamp = \
+                                          self._get_tweet_time_date_js_stream(
+                                              tweet[0])
+                                        ret.append({'id': tweet_id,
+                                                    'timestamp': timestamp})
+                        now = len(ret) * 100 / lastx
+                        if now != previous:
+                            previous = now
+                            config.print_same_line(str(now) + "%..")
+                            error = 0
+                        else:
+                            error += 1
+                    return ret
             except (NoSuchElementException, TimeoutException):
                 return None
 
 if __name__ == '__main__':
     twitter = Twitter(argv[1], argv[2])
     twitter._login()
-    twitter.get_tweets_timedates_last('')
+    print twitter.get_tweets_timedates_last('')
     twitter._sign_out()
