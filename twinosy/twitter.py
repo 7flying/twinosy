@@ -251,13 +251,9 @@ class Twitter(object):
 
     def _get_tweet_text_js_stream(self, js_stream):
         """Returns the tweet text from a js stream element."""
-        temp = js_stream.find_all(class_='ProfileTweet-contents')[0]
-        if temp != None:
-            text = temp.find_all(class_='ProfileTweet-contents')
-            print text
-            if len(text) > 0:
-                print text[0]
-            return text[0].getText()
+        if len(js_stream) > 0:
+            return js_stream[0].find(class_='ProfileTweet-contents').find(
+                class_='ProfileTweet-text').getText()
         else:
             return None
     
@@ -401,16 +397,29 @@ class Twitter(object):
                       soup = BeautifulSoup(self.firefox.page_source, "lxml")
                       tweets = [x.find_all(class_='ProfileTweet')
                                 for x in soup.find_all(class_='js-stream-item')]
-                      print tweets[0]
-                      """
                       for tweet in tweets:
                           if len(tweet) > 0:
                               tweet_id = self._get_tweet_id_js_stream(tweet[0])
                               if tweet_id != None and tweet_id not in processed:
                                   processed.add(tweet_id)
-                                  print self._get_tweet_text_js_stream(tweet[0])
-                      """
-                      error = Twitter.MAX_ERRORS_USER
+                                  text = self._get_tweet_text_js_stream(tweet)
+                                  author_id = \
+                                    self._get_tweet_author_id_js_stream(tweet[0])
+                                  author = self._get_tweet_author_js_stream(
+                                      tweet[0])
+                                  timestamp = self._get_tweet_time_date_js_stream(
+                                          tweet[0])
+                                  ret.append({'id': tweet_id, 'tweet': text,
+                                              'author-id': author_id,
+                                              'author': author,
+                                              'timestamp': timestamp})
+                      now = len(ret) * 100 / lastx
+                      if now != previous:
+                          previous = now
+                          config.print_same_line(str(now) + "%..")
+                          error = 0
+                      else:
+                          error += 1
                     return ret
             except (NoSuchElementException, TimeoutException):
                 return None
