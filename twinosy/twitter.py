@@ -246,6 +246,20 @@ class Twitter(object):
         if temp != None:
             timestamp = temp.find_all(class_='ProfileTweet-timestamp')
             return timestamp[0]['title']
+        else:
+            return None
+
+    def _get_tweet_text_js_stream(self, js_stream):
+        """Returns the tweet text from a js stream element."""
+        temp = js_stream.find_all(class_='ProfileTweet-contents')[0]
+        if temp != None:
+            text = temp.find_all(class_='ProfileTweet-contents')
+            print text
+            if len(text) > 0:
+                print text[0]
+            return text[0].getText()
+        else:
+            return None
     
     def _get_favs_who(self, expected, limit):
         """Private method to process the fav tweets."""
@@ -327,7 +341,7 @@ class Twitter(object):
             return ret if type(ret) == bool else str('Verified account') in ret
 
     def get_tweets_timedates_last(self, user, lastx=50):
-        """Returns the last x tweet's publish time-date."""
+        """Returns a dict of tweet-id, timestamp of the last x tweets of a User"""
         if user != None:
             num = self.get_num_tweets(user)
             lastx = num if num < lastx else lastx
@@ -348,12 +362,13 @@ class Twitter(object):
                         for tweet in tweets:
                             if len(tweet) > 0:
                                 tweet_id = self._get_tweet_id_js_stream(tweet[0])
-                                if tweet_id != None:
-                                    if tweet_id not in processed:
-                                        processed.add(tweet_id)
-                                        timestamp = \
-                                          self._get_tweet_time_date_js_stream(
-                                              tweet[0])
+                                if tweet_id != None and \
+                                  tweet_id not in processed:
+                                    processed.add(tweet_id)
+                                    timestamp = \
+                                      self._get_tweet_time_date_js_stream(
+                                          tweet[0])
+                                    if timestamp != None:
                                         ret.append({'id': tweet_id,
                                                     'timestamp': timestamp})
                         now = len(ret) * 100 / lastx
@@ -367,8 +382,41 @@ class Twitter(object):
             except (NoSuchElementException, TimeoutException):
                 return None
 
+    def get_whole_tweets_last(self, user, lastx=100):
+        """Returns the last x tweets from a user, giving the author, author-id,
+        tweet-id, tweet and timestamp"""
+        if user != None:
+            num = self.get_num_tweets(user)
+            lastx = num if num < lastx else lastx
+            try:
+                if self._is_timeline_protected():
+                    return None
+                else:
+                    scroll = previous = error = 0
+                    ret = []
+                    processed = set()
+                    while len(processed) < lastx and \
+                      error < Twitter.MAX_ERRORS_USER:
+                      scroll = self._scroll_down(scroll)
+                      soup = BeautifulSoup(self.firefox.page_source, "lxml")
+                      tweets = [x.find_all(class_='ProfileTweet')
+                                for x in soup.find_all(class_='js-stream-item')]
+                      print tweets[0]
+                      """
+                      for tweet in tweets:
+                          if len(tweet) > 0:
+                              tweet_id = self._get_tweet_id_js_stream(tweet[0])
+                              if tweet_id != None and tweet_id not in processed:
+                                  processed.add(tweet_id)
+                                  print self._get_tweet_text_js_stream(tweet[0])
+                      """
+                      error = Twitter.MAX_ERRORS_USER
+                    return ret
+            except (NoSuchElementException, TimeoutException):
+                return None
+
 if __name__ == '__main__':
     twitter = Twitter(argv[1], argv[2])
     twitter._login()
-    print twitter.get_tweets_timedates_last('')
+    print twitter.get_whole_tweets_last('lifehacker', 5)
     twitter._sign_out()
