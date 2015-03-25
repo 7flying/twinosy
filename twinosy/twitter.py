@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ex_co
 from bs4 import BeautifulSoup
 import config
+import re
 
 MAIN_URL = "https://twitter.com"
 
@@ -424,8 +425,27 @@ class Twitter(object):
             except (NoSuchElementException, TimeoutException):
                 return None
 
+def get_hastags_from_tweet(tweet):
+    """Returns a list of the hastags in a tweet."""
+    if tweet == None or len(tweet) == 0:
+        return None
+    else:
+        matcher_hastags = re.compile('(#\w+)')
+        return matcher_hastags.find_all(tweet)
+
+
+def get_mentions_from_tweet(tweet):
+    """Returns a list of the mentions in a tweet."""
+    if tweet == None or len(tweet) == 0:
+        return None
+    else:
+        matcher_mentions = re.compile('(@(\w|\d|_)+)')
+        return [x[0] for x in matcher_mentions.find_all(tweet)]
+
 if __name__ == '__main__':
     twitter = Twitter(argv[1], argv[2])
     twitter._login()
-    print twitter.get_whole_tweets_last('lifehacker', 5)
+    tweets = twitter.get_whole_tweets_last('lifehacker', 5)
+    for tweet in tweets:
+        print tweet
     twitter._sign_out()
