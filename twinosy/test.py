@@ -1,10 +1,15 @@
+# -*- coding: utf-8 -*-
 import time
 import re
+import datetime
 from os import listdir
 from random import randint
+from sys import argv
 import networkx as nx
 import matplotlib.pyplot as plt
+import numpy as np
 from graph_tool.all import *
+from twitter import Twitter
 from manager import DBManager
 
 def test1():
@@ -94,12 +99,14 @@ def get_users(filename):
 
 def files_to_db():
     manager = DBManager()
-    manager.create_db('test.sqlite')
+    manager.create_db('twinosy-test.sqlite')
     manager.connect()
     files = listdir('files')
     print "%d files found" % len(files)
     matcher_followers = re.compile("^.+_followers\.txt$")
     matcher_following = re.compile("^.+_following\.txt$")
+    time1 = time.time()
+    pro = 1
     for f in files:
         if matcher_followers.match(f):
            users = get_users('files/' + f)
@@ -111,16 +118,102 @@ def files_to_db():
                 users = get_users('files/' + f)
                 if not manager.is_account_created(f[0:f.rfind('_')]):
                     manager.insert_user(f[0:f.rfind('_')])
-                manager.insert_followers(f[0:f.rfind('_')], users)
+                manager.insert_following(f[0:f.rfind('_')], users)
             else:
                 print "ERRRRRRRROR with", f
-                
+        print "Processed file %d out of %d!" % (pro, len(files))
+        pro += 1
     manager.disconnect()
+    time2 = time.time()
+    print "DB created in " + str(time2 - time1)
 
+def test5():
+    twitter = Twitter(argv[1], argv[2])
+    twitter._login()
+    twitter._sign_out()
 
+def test6():
+    x = [1, 2, 4, 3]
+    y = [1, 2, 3, 4]
+    labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
+              'Saturday', 'Sunday']
+    #plt.plot(x, y, 'ro')
+    plt.xticks(x, labels, rotation='vertical')
+    plt.margins(0.2)
+    plt.subplots_adjust(bottom=0.15)
+    area = np.pi * 10 ** 2
+    plt.scatter(x, y, s=area)
+    plt.show()
+
+def test7():
+    twitter = Twitter(argv[1], argv[2])
+    twitter._login()
+    tweets_timedates = twitter.get_tweets_timedates_last('lifehacker', 200)
+    day_plot_format = '%Y%m%d'
+    time_plot_format = '%H.%M'
+        
+    counts = {}
+    x = []
+    y = []
+    for tweet_time in tweets_timedates:
+        d = datetime.datetime.strptime(tweet_time['timestamp'],
+                                       '%I:%M %p - %d %b %Y')
+                                    
+        day = datetime.date.strftime(d, day_plot_format)
+        time = datetime.date.strftime(d, time_plot_format)
+        if day not in x:
+            x.append(day)
+        if time not in y:
+            y.append(time)
+        if day not in counts:
+            counts[day] = {}
+        if time not in counts[day]:
+            counts[day][time] = 0
+        counts[day][time] += 1
+    twitter._sign_out()
+    return counts
+
+def test8(data):
+    """
+    data = {'20150212': {'2146': 1, '2156': 1},
+            '20150309': {'2130': 1, '2236': 1},
+            '20141206': {'0356': 1}, '20141030': {'1730': 1},
+            '20141201': {'0049': 1, '2210': 1, '2334': 1, '0050': 1, '1819': 1,
+                         '0045': 1},
+            '20141202': {'0004': 1, '0006': 1, '0038': 1, '0107': 1, '1853': 1,
+                         '0008': 1, '1922': 1, '1902': 1, '0051': 1},
+            '20150121': {'2251': 1}, '20150114': {'1907': 1},
+            '20150123': {'2240': 1}, '20141111': {'1004': 1, '1018': 1},
+            '20150321': {'0009': 1}, '20150319': {'1243': 1},
+            '20150323': {'1650': 1}, '20141120': {'0021': 1, '0018': 1},
+            '20150306': {'2014': 1}, '20150317': {'1514': 1},
+            '20150311': {'1932': 1, '2204': 1, '1640': 1},
+            '20150312': {'0045': 1}, '20150128': {'2251': 1}}    
+    """
+    x = []
+    y = []
+    s = []
+    for day in data.keys():
+        for timestamp in data[day].keys():
+            x.append(float(day))
+            y.append(float(timestamp))
+            s.append(np.pi * (data[day][timestamp] % 15) ** 2)
+    plt.xticks([float(i) for i in sorted(data.keys())], sorted(data.keys()),
+               rotation='vertical')
+    print x
+    print y
+    plt.margins(0.2)
+    plt.subplots_adjust(bottom=0.15)
+    plt.scatter(x, y, s=s)
+    plt.show()
+
+    
 if __name__ == '__main__':
     #test1()
-    test2()
+    #test2()
     #test3()
     #test4()
-    #test5()
+    #test6()
+    data = test7()
+    test8(data)
+    #files_to_db()

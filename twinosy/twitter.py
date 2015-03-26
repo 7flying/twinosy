@@ -11,9 +11,11 @@ import re
 
 MAIN_URL = "https://twitter.com"
 
+
 class Twitter(object):
     """Crawls Twitter"""
     MAX_ERRORS_USER = 30
+    TIMESTAMP_FORMAT = '%I:%M %p - %d %b %Y'
     
     def __init__(self, username=None, password=None):
         self.loged_in = False
@@ -338,7 +340,8 @@ class Twitter(object):
             return ret if type(ret) == bool else str('Verified account') in ret
 
     def get_tweets_timedates_last(self, user, lastx=50):
-        """Returns a dict of tweet-id, timestamp of the last x tweets of a User"""
+        """Returns a dict of tweet-id, timestamp of the last x tweets of the
+        timeline of a User"""
         if user != None:
             num = self.get_num_tweets(user)
             lastx = num if num < lastx else lastx
@@ -445,7 +448,7 @@ def get_mentions_from_tweet(tweet):
 if __name__ == '__main__':
     twitter = Twitter(argv[1], argv[2])
     twitter._login()
-    tweets = twitter.get_whole_tweets_last('lifehacker', 5)
+    tweets = twitter.get_tweets_timedates_last('lifehacker', 25)
     for tweet in tweets:
         print tweet
     twitter._sign_out()
