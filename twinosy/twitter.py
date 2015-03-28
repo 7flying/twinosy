@@ -428,27 +428,41 @@ class Twitter(object):
             except (NoSuchElementException, TimeoutException):
                 return None
 
-def get_hastags_from_tweet(tweet):
-    """Returns a list of the hastags in a tweet."""
-    if tweet == None or len(tweet) == 0:
-        return None
-    else:
-        matcher_hastags = re.compile('(#\w+)')
-        return matcher_hastags.find_all(tweet)
+    @staticmethod
+    def get_hastags_from_tweet(tweet):
+        """Returns a list of the hastags in a tweet."""
+        if tweet == None or len(tweet) == 0:
+            return []
+        else:
+            matcher_hastags = re.compile('(#\w+)')
+            return matcher_hastags.findall(tweet)
 
+    @staticmethod
+    def get_mentions_from_tweet(tweet):
+        """Returns a list with the mentions in the tweet"""
+        if tweet == None or len(tweet) == 0:
+            return []
+        else:
+            matcher_mentions = re.compile('(@(\w|\d|_)+)')
+            return [x[0] for x in matcher_mentions.findall(tweet)]
 
-def get_mentions_from_tweet(tweet):
-    """Returns a list of the mentions in a tweet."""
-    if tweet == None or len(tweet) == 0:
-        return None
-    else:
-        matcher_mentions = re.compile('(@(\w|\d|_)+)')
-        return [x[0] for x in matcher_mentions.find_all(tweet)]
+    @staticmethod
+    def get_urls_from_tweet(tweet):
+        """Returns a list with the urls in the tweet."""
+        if tweet == None or len(tweet) == 0:
+            return []
+        else:
+            matcher_url = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|'
+                                     + '[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+            return matcher_url.findall(tweet)
 
 if __name__ == '__main__':
+    """
     twitter = Twitter(argv[1], argv[2])
     twitter._login()
     tweets = twitter.get_tweets_timedates_last('lifehacker', 25)
     for tweet in tweets:
         print tweet
     twitter._sign_out()
+    """
+    print Twitter.get_urls_from_tweet("@something http:/7hello https://hello.com")
