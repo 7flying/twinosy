@@ -16,7 +16,7 @@ class Twitter(object):
     """Crawls Twitter"""
     MAX_ERRORS_USER = 30
     TIMESTAMP_FORMAT = '%I:%M %p - %d %b %Y'
-    
+
     def __init__(self, username=None, password=None):
         self.loged_in = False
         self.firefox = webdriver.Firefox()
@@ -26,7 +26,7 @@ class Twitter(object):
 
     def _login(self):
         if not self.loged_in:
-            if self.firefox == None:
+            if self.firefox is None:
                 self.firefox = webdriver.Firefox()
             self.firefox.get(MAIN_URL)
             if self.username is not None and self.password is not None:
@@ -102,17 +102,19 @@ class Twitter(object):
         """Returns the username's set of followers."""
         config.print_("Processing get_followers of " + user)
         total_foll = self.get_num_followers(user)
-        if total_foll == None:
+        if total_foll is None:
             config.print_("!!! Couldn't retrieve followers !!!")
-        return self._get_follx(total_foll, limit) if total_foll != None else set()
+        return self._get_follx(total_foll, limit) if total_foll is not None \
+          else set()
 
     def get_following(self, user, limit=False):
         """Returns the username's set of followings."""
         config.print_("Processing get_following of " + user)
         total_foll = self.get_num_following(user)
-        if total_foll == None:
+        if total_foll is None:
             config.print_("!!! Couldn't retrieve following !!!")
-        return self._get_follx(total_foll, limit) if total_foll != None else set()
+        return self._get_follx(total_foll, limit) if total_foll is not None \
+          else set()
 
     def get_num_followers(self, user):
         """Returns the number of followers of user and stays in /followers."""
@@ -204,7 +206,7 @@ class Twitter(object):
                 return int(number)
         except (NoSuchElementException, TimeoutException):
             return None
-    
+
     def get_num_favouritess_by_user(self, user, limit=False):
         """Returns a dict with the number of favourites done by a user
         to others."""
@@ -338,7 +340,7 @@ class Twitter(object):
     def get_tweets_timedates_last(self, user, lastx=50):
         """Returns a dict of tweet-id, timestamp of the last x tweets of the
         timeline of a User"""
-        if user != None:
+        if user is not None:
             num = self.get_num_tweets(user)
             lastx = num if num < lastx else lastx
             self.firefox.get('https://twitter.com/' + user)
@@ -354,17 +356,19 @@ class Twitter(object):
                         scroll = self._scroll_down(scroll)
                         soup = BeautifulSoup(self.firefox.page_source, "lxml")
                         tweets = [x.find_all(class_='ProfileTweet')
-                                 for x in soup.find_all(class_='js-stream-item')]
+                                 for x in soup.find_all(
+                                     class_='js-stream-item')]
                         for tweet in tweets:
                             if len(tweet) > 0:
-                                tweet_id = self._get_tweet_id_js_stream(tweet[0])
-                                if tweet_id != None and \
+                                tweet_id = self._get_tweet_id_js_stream(
+                                    tweet[0])
+                                if tweet_id is not None and \
                                   tweet_id not in processed:
                                     processed.add(tweet_id)
                                     timestamp = \
                                       self._get_tweet_time_date_js_stream(
                                           tweet[0])
-                                    if timestamp != None:
+                                    if timestamp is not None:
                                         ret.append({'id': tweet_id,
                                                     'timestamp': timestamp})
                         now = len(ret) * 100 / lastx
@@ -391,7 +395,7 @@ class Twitter(object):
     def get_user_whole_favorites(self, user, lastx=100):
         """Returns the last x favourite tweets from a user, giving the author,
         author-id, tweet-id, tweet and timestamp."""
-        if user == None or len(user) < 1:
+        if user is None or len(user) < 1:
             return None
         url = 'https://twitter.com/favorites' if user == self.username \
             else 'https://twitter.com/' + user + '/favorites'
@@ -468,7 +472,8 @@ class Twitter(object):
             return []
         else:
             matcher_url = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|'
-                                     + '[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+                                     + '[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]'
+                                     + '))+')
             return matcher_url.findall(tweet)
 
 if __name__ == '__main__':
