@@ -29,7 +29,7 @@ class GraphGenerator(object):
             for user in following:
                 self.graph.add_node(user)
                 self.graph.add_edge(username, user)
-            
+
     def generate_followers_graph(self, username, followers):
         """Generates a graph from a user to its followers."""
         if username != None and followers != None:
@@ -51,11 +51,11 @@ class GraphGenerator(object):
     def paint(self):
         """Draws the graph."""
         pos = nx.graphviz_layout(self.graph)
-        nx.draw_networkx_nodes(self.graph,pos,node_size=300,node_color='#9933FF'
-                               ,alpha=0.4)
-        nx.draw_networkx_edges(self.graph,pos,edge_color='#3399FF',node_size=0,
-                       width=1,alpha=0.4)
-        nx.draw_networkx_labels(self.graph,pos,fontsize=14)
+        nx.draw_networkx_nodes(self.graph, pos, node_size=300,
+                               node_color='#9933FF', alpha=0.4)
+        nx.draw_networkx_edges(self.graph, pos, edge_color='#3399FF',
+                               node_size=0, width=1, alpha=0.4)
+        nx.draw_networkx_labels(self.graph, pos, fontsize=14)
         plt.axis('off')
         plt.show()
 

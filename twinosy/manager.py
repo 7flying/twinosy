@@ -7,6 +7,9 @@ class DBManager(object):
     """Class to handle the db."""
     conn = None
     
+    def __init__(self, name=None):
+        self.name = name
+
     def create_db(self, name):
         """Creates the db."""
         self.name = name
@@ -27,7 +30,8 @@ class DBManager(object):
             cursor.execute(
             """CREATE TABLE Followers (
                user INTEGER NOT NULL REFERENCES User (id) ON DELETE CASCADE,
-               follower INTEGER NOT NULL REFERENCES User (id) ON DELETE CASCADE);
+               follower INTEGER NOT NULL REFERENCES User (id)
+                ON DELETE CASCADE);
             """)
             DBManager.conn.commit()
             self.disconnect()
@@ -35,7 +39,7 @@ class DBManager(object):
         else:
             config.print_("The database is already created.")
 
-    def connect(self,name=None):
+    def connect(self, name=None):
         if name != None:
             self.name = name
         if DBManager.conn == None:
@@ -100,9 +104,10 @@ class DBManager(object):
         user_id = self._get_user_id(user)
         other_id = self._get_user_id(other)
         if user_id != None and other_id != None:
-            cursor  = DBManager.conn.cursor()
-            cursor.execute("SELECT * FROM Followers" + 
-                           " WHERE user = ? AND  follower = ?;", (user_id, other_id))
+            cursor = DBManager.conn.cursor()
+            cursor.execute("SELECT * FROM Followers" +
+                           " WHERE user = ? AND  follower = ?;",
+                           (user_id, other_id))
             result = cursor.fetchone()
             return True if result != None else False
         else:
@@ -113,8 +118,8 @@ class DBManager(object):
         user_id = self._get_user_id(user)
         other_id = self._get_user_id(other)
         if user_id != None and other_id != None:
-            cursor  = DBManager.conn.cursor()
-            cursor.execute("SELECT * FROM Following" + 
+            cursor = DBManager.conn.cursor()
+            cursor.execute("SELECT * FROM Following" +
                            " WHERE user = ? AND follows = ?;",
                            (user_id, other_id))
             result = cursor.fetchone()

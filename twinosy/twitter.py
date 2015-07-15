@@ -187,7 +187,7 @@ class Twitter(object):
                 return None
         else:
             return None
-    
+
     def get_num_favourites(self, user):
         """Returns the number of favourited tweets by a user."""
         self.firefox.get('https://twitter.com/' + user)
@@ -356,8 +356,8 @@ class Twitter(object):
                         scroll = self._scroll_down(scroll)
                         soup = BeautifulSoup(self.firefox.page_source, "lxml")
                         tweets = [x.find_all(class_='ProfileTweet')
-                                 for x in soup.find_all(
-                                     class_='js-stream-item')]
+                                  for x in soup.find_all(\
+                                    class_='js-stream-item')]
                         for tweet in tweets:
                             if len(tweet) > 0:
                                 tweet_id = self._get_tweet_id_js_stream(
@@ -426,16 +426,16 @@ class Twitter(object):
                             if tweet_id != None and tweet_id not in processed:
                                 processed.add(tweet_id)
                                 text = self._get_tweet_text_js_stream(tweet)
-                                author_id = self._get_tweet_author_id_js_stream(
-                                        tweet[0])
-                                author = self._get_tweet_author_js_stream(
-                                        tweet[0])
-                                timestamp = self._get_tweet_time_date_js_stream(
-                                        tweet[0])
+                                auth_id = self._get_tweet_author_id_js_stream(\
+                                    tweet[0])
+                                author = self._get_tweet_author_js_stream(\
+                                    tweet[0])
+                                tmstamp = self._get_tweet_time_date_js_stream(\
+                                    tweet[0])
                                 ret.append({'id': tweet_id, 'tweet': text,
-                                            'author-id': author_id,
+                                            'author-id': auth_id,
                                             'author': author,
-                                            'timestamp': timestamp})
+                                            'timestamp': tmstamp})
                     now = len(ret) * 100 / lastx
                     if now != previous:
                         previous = now
@@ -446,7 +446,7 @@ class Twitter(object):
                     return ret
         except (NoSuchElementException, TimeoutException):
             return None
-                     
+
     @staticmethod
     def get_hastags_from_tweet(tweet):
         """Returns a list of the hastags in a tweet."""

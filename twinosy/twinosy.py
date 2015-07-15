@@ -72,8 +72,8 @@ def scrap(user_list, dbname, botname, botpass, arffname=None):
                    u"'"+ bio + u"'", "'lang',CLASS\n")
             res = u','.join(sec)
             f.write(res.encode('utf-8'))
-         print "Progress: " + str(progress) + " of " + common_len
-         progress += 1
+        print "Progress: " + str(progress) + " of " + common_len
+        progress += 1
        
     twitter._sign_out()
     if f != None:
