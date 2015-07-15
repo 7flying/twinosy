@@ -2,11 +2,21 @@
 \#*\#
 .\#*
 twinosy/files/
+TODO.org
+    
+# Gephi, dot and ps
+*.dot
+*.gephi
+*.ps
+    
+# Databases
+*.sqlite
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-
+*.pyc
+ 
 # C extensions
 *.so
 
