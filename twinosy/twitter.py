@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+
+import re
+import os
+import config
 from sys import argv
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
@@ -6,18 +10,41 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ex_co
 from bs4 import BeautifulSoup
-import config
-import re
+from tweepy import API, OAuthHandler
 
 MAIN_URL = "https://twitter.com"
 
+class TwitterAPI(object):
+    def __init__(self):
+        # TODO cache the results
+        self.cache = {}
+
+    def _login(self):
+        auth = OAuthHandler(os.environ['TWI_CO_KEY'],
+                            os.environ['TWI_CO_SECRET'])
+        auth.set_access_token(os.environ['TWI_AC_TOKEN'],
+                              os.environ['TWI_AC_SECRET'])
+        self.api = API(auth)
+
+    def get_followers(self, user):
+        return set([x.screen_name for x in self.api.followers(user)])
+
+    def get_following(self, user):
+        users = [self.api.get_user(u) for u in self.api.friends_ids(user)]
+        return set([u.screen_name for u in users])
+
+    def get_num_followers(self, user):
+        return self.api.get_user(user).followers_count
+
+    def get_num_following(self, user):
+        return self.api.get_user(user).friends_count
 
 class Twitter(object):
     """Crawls Twitter"""
     MAX_ERRORS_USER = 30
     TIMESTAMP_FORMAT = '%I:%M %p - %d %b %Y'
 
-    def __init__(self, username=None, password=None):
+    def __init__(self, username, password):
         self.loged_in = False
         self.firefox = webdriver.Firefox()
         self.firefox.get(MAIN_URL)
