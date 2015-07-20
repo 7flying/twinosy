@@ -18,6 +18,9 @@ MAIN_URL = "https://twitter.com"
 
 class Twitter(object):
 
+    def __init__(self):
+        pass
+
     @abc.abstractmethod
     def get_num_tweets(self, user):
         """Returs the number of tweets a user has made."""
@@ -55,8 +58,38 @@ class Twitter(object):
     def is_official(self, user):
         """Checks whether the specified account is official or not."""
 
+    @staticmethod
+    def get_hastags_from_tweet(tweet):
+        """Returns a list of the hastags in a tweet."""
+        if tweet == None or len(tweet) == 0:
+            return []
+        else:
+            matcher_hastags = re.compile('(#\w+)')
+            return matcher_hastags.findall(tweet)
+
+    @staticmethod
+    def get_mentions_from_tweet(tweet):
+        """Returns a list with the mentions in the tweet"""
+        if tweet == None or len(tweet) == 0:
+            return []
+        else:
+            matcher_mentions = re.compile('(@(\w|\d|_)+)')
+            return [x[0] for x in matcher_mentions.findall(tweet)]
+
+    @staticmethod
+    def get_urls_from_tweet(tweet):
+        """Returns a list with the urls in the tweet."""
+        if tweet == None or len(tweet) == 0:
+            return []
+        else:
+            matcher_url = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|'
+                                     + '[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]'
+                                     + '))+')
+            return matcher_url.findall(tweet)
+
 class TwitterAPI(Twitter):
     def __init__(self):
+        Twitter.__init__(self)
         # TODO cache the results
         self.cache = {}
 
@@ -80,12 +113,13 @@ class TwitterAPI(Twitter):
     def get_num_following(self, user):
         return self.api.get_user(user).friends_count
 
-class TwitterScaping(Twitter):
+class TwitterScraper(Twitter):
     """Crawls Twitter"""
     MAX_ERRORS_USER = 30
     TIMESTAMP_FORMAT = '%I:%M %p - %d %b %Y'
 
     def __init__(self, username, password):
+        Twitter.__init__(self)
         self.loged_in = False
         self.firefox = webdriver.Firefox()
         self.firefox.get(MAIN_URL)
@@ -509,37 +543,9 @@ class TwitterScaping(Twitter):
         except (NoSuchElementException, TimeoutException):
             return None
 
-    @staticmethod
-    def get_hastags_from_tweet(tweet):
-        """Returns a list of the hastags in a tweet."""
-        if tweet == None or len(tweet) == 0:
-            return []
-        else:
-            matcher_hastags = re.compile('(#\w+)')
-            return matcher_hastags.findall(tweet)
-
-    @staticmethod
-    def get_mentions_from_tweet(tweet):
-        """Returns a list with the mentions in the tweet"""
-        if tweet == None or len(tweet) == 0:
-            return []
-        else:
-            matcher_mentions = re.compile('(@(\w|\d|_)+)')
-            return [x[0] for x in matcher_mentions.findall(tweet)]
-
-    @staticmethod
-    def get_urls_from_tweet(tweet):
-        """Returns a list with the urls in the tweet."""
-        if tweet == None or len(tweet) == 0:
-            return []
-        else:
-            matcher_url = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|'
-                                     + '[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]'
-                                     + '))+')
-            return matcher_url.findall(tweet)
 
 if __name__ == '__main__':
-    twitter = Twitter(argv[1], argv[2])
+    twitter = TwitterScraper(argv[1], argv[2])
     twitter._login()
     tweets = twitter.get_whole_tweets_last('lifehacker', 25)
     for tweet in tweets:
