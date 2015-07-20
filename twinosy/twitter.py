@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import abc
 import re
 import os
 import config
@@ -14,7 +15,47 @@ from tweepy import API, OAuthHandler
 
 MAIN_URL = "https://twitter.com"
 
-class TwitterAPI(object):
+
+class Twitter(object):
+
+    @abc.abstractmethod
+    def get_num_tweets(self, user):
+        """Returs the number of tweets a user has made."""
+
+    @abc.abstractmethod
+    def get_followers(self, user):
+        """Returns the username's set of followers."""
+
+    @abc.abstractmethod
+    def get_following(self, user):
+        """Returns the username's set of followers."""
+
+    @abc.abstractmethod
+    def get_num_followers(self, user):
+        """Returns the number of followers."""
+
+    @abc.abstractmethod
+    def get_num_following(self, user):
+        """Returns the number of following."""
+
+    @abc.abstractmethod
+    def get_num_favs(self, user):
+        """Returns the number of favourited tweets by a user."""
+
+    @abc.abstractmethod
+    def get_num_favs_by_user(self, user):
+        """Returns a dict with the number of favourites done by a user to
+        others."""
+
+    @abc.abstractmethod
+    def get_user_bio(self, user):
+        """Returns a user's profile description."""
+
+    @abc.abstractmethod
+    def is_official(self, user):
+        """Checks whether the specified account is official or not."""
+
+class TwitterAPI(Twitter):
     def __init__(self):
         # TODO cache the results
         self.cache = {}
@@ -39,7 +80,7 @@ class TwitterAPI(object):
     def get_num_following(self, user):
         return self.api.get_user(user).friends_count
 
-class Twitter(object):
+class TwitterScaping(Twitter):
     """Crawls Twitter"""
     MAX_ERRORS_USER = 30
     TIMESTAMP_FORMAT = '%I:%M %p - %d %b %Y'
@@ -197,7 +238,6 @@ class Twitter(object):
             return None
 
     def get_num_tweets(self, user):
-        """Returns the number of tweets a user has made."""
         if user != None and len(user) > 0:
             self.firefox.get('https://twitter.com/' + user)
             try:
@@ -215,8 +255,7 @@ class Twitter(object):
         else:
             return None
 
-    def get_num_favourites(self, user):
-        """Returns the number of favourited tweets by a user."""
+    def get_num_favs(self, user):
         self.firefox.get('https://twitter.com/' + user)
         try:
             WebDriverWait(self.firefox, 10).until(
@@ -234,9 +273,7 @@ class Twitter(object):
         except (NoSuchElementException, TimeoutException):
             return None
 
-    def get_num_favouritess_by_user(self, user, limit=False):
-        """Returns a dict with the number of favourites done by a user
-        to others."""
+    def get_num_favs_by_user(self, user, limit=False):
         num = self.get_num_favourites(user)
         if user == self.username:
             self.firefox.get('https://twitter.com/favorites')
@@ -320,7 +357,6 @@ class Twitter(object):
         return ret
 
     def get_user_bio(self, user):
-        """Returns a user's profile description."""
         self.firefox.get('https://twitter.com/' + user)
         try:
             WebDriverWait(self.firefox, 10).until(
@@ -357,7 +393,6 @@ class Twitter(object):
             return None
 
     def is_official(self, user):
-        """Checks whether the specified account is official or not."""
         ret = self._get_badges(user)
         if ret == None:
             return False
