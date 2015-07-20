@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from graph_tool.all import *
 from twitter import Twitter
+from graphs import GraphGenerator
 from manager import DBManager
 
 def test1():
@@ -68,8 +69,8 @@ def test2():
     nx.write_dot(dir_graph, "test2.dot") # then dot file.dot -T png > output.png
     print "Time took to generate dot file: %s" % (str(time_four - time_one))
     print "Total: %s" % (str(time_four - time_one))
-    #plt.show()
-    #plt.savefig("test2.png")
+    plt.show()
+    plt.savefig(".png")
    
 
 def test3():
@@ -207,6 +208,20 @@ def test8(data):
     plt.scatter(x, y, s=s)
     plt.show()
 
+def test9():
+    """ Generate the network graph"""
+    twitter = Twitter(argv[1], argv[2])
+    twitter._login()
+    followers = twitter.get_followers('', 300)
+    following = twitter.get_following('', 300)
+    twitter._sign_out()
+    graph_gen = GraphGenerator('', followers=followers,
+                               following=following)
+    graph_gen.generate_follows_intersect_graph('', following,
+                                                followers)
+    graph_gen.save_dot('.dot')
+    graph_gen.paint()
+
     
 if __name__ == '__main__':
     #test1()
@@ -214,6 +229,7 @@ if __name__ == '__main__':
     #test3()
     #test4()
     #test6()
-    data = test7()
-    test8(data)
+    #data = test7()
+    #test8(data)
     #files_to_db()
+    test9()
