@@ -4,6 +4,8 @@ import abc
 import re
 import os
 import config
+import time
+from collections import defaultdict
 from sys import argv
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
@@ -11,7 +13,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ex_co
 from bs4 import BeautifulSoup
-from tweepy import API, OAuthHandler
+from tweepy import API, Cursor, OAuthHandler
 
 MAIN_URL = "https://twitter.com"
 
@@ -40,6 +42,10 @@ class Twitter(object):
     @abc.abstractmethod
     def get_num_following(self, user):
         """Returns the number of following."""
+
+    @abc.abstractmethod
+    def get_favs(self, user):
+        """Returns the favourites of the given user."""
 
     @abc.abstractmethod
     def get_num_favs(self, user):
@@ -92,6 +98,8 @@ class TwitterAPI(Twitter):
         Twitter.__init__(self)
         # TODO cache the results
         self.cache = {}
+        # TODO check the ratings
+        self.limits = defaultdict(int)
 
     def _login(self):
         auth = OAuthHandler(os.environ['TWI_CO_KEY'],
@@ -100,18 +108,42 @@ class TwitterAPI(Twitter):
                               os.environ['TWI_AC_SECRET'])
         self.api = API(auth)
 
+    def get_num_tweets(self, user):
+        pass
+
     def get_followers(self, user):
-        return set([x.screen_name for x in self.api.followers(user)])
+        temp = []
+        cur = Cursor(self.api.followers, screen_name=user).pages()
+        for page in cur:
+            temp.extend([u.screen_name for u in page])
+            time.sleep(30)
+        return temp
 
     def get_following(self, user):
-        users = [self.api.get_user(u) for u in self.api.friends_ids(user)]
-        return set([u.screen_name for u in users])
+        temp = []
+        cur = Cursor(self.api.friends_ids, screen_name=user).pages()
+        for page in cur:
+            temp.extend([self.api.get_user(u) for u in page])
+            time.sleep(60)
+        return temp
 
     def get_num_followers(self, user):
         return self.api.get_user(user).followers_count
 
     def get_num_following(self, user):
         return self.api.get_user(user).friends_count
+
+    def get_favs(self, user):
+        pass
+
+    def get_num_favs(self, user):
+        pass
+
+    def get_num_favs_by_user(self, user):
+        pass
+
+    def get_user_bio(self, user):
+        pass
 
 class TwitterScraper(Twitter):
     """Crawls Twitter"""
