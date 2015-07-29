@@ -6,7 +6,7 @@ import config
 class DBManager(object):
     """Class to handle the db."""
     conn = None
-    
+
     def __init__(self, name=None):
         self.name = name
 
@@ -50,8 +50,8 @@ class DBManager(object):
 
     def disconnect(self):
         if DBManager.conn:
-			DBManager.conn.close()
-			DBManager.conn = None
+            DBManager.conn.close()
+            DBManager.conn = None
 
     def insert_user(self, account):
         """Inserts a user."""
