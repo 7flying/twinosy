@@ -3,12 +3,12 @@
 .\#*
 twinosy/files/
 TODO.org
-    
+
 # Gephi, dot and ps
 *.dot
 *.gephi
 *.ps
-    
+
 # Databases
 *.sqlite
 
@@ -16,7 +16,7 @@ TODO.org
 __pycache__/
 *.py[cod]
 *.pyc
- 
+
 # C extensions
 *.so
 
