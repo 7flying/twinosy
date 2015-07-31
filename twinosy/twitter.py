@@ -14,9 +14,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ex_co
 from bs4 import BeautifulSoup
 from tweepy import API, Cursor, OAuthHandler
+from domain import User
+
 
 MAIN_URL = "https://twitter.com"
-
 
 class Twitter(object):
 
@@ -62,25 +63,6 @@ class Twitter(object):
 
     @abc.abstractmethod
     def is_official(self, user):
-        """Checks whether the specified account is official or not."""
-
-    @staticmethod
-    def get_hastags_from_tweet(tweet):
-        """Returns a list of the hastags in a tweet."""
-        if tweet == None or len(tweet) == 0:
-            return []
-        else:
-            matcher_hastags = re.compile('(#\w+)')
-            return matcher_hastags.findall(tweet)
-
-    @staticmethod
-    def get_mentions_from_tweet(tweet):
-        """Returns a list with the mentions in the tweet"""
-        if tweet == None or len(tweet) == 0:
-            return []
-        else:
-            matcher_mentions = re.compile('(@(\w|\d|_)+)')
-            return [x[0] for x in matcher_mentions.findall(tweet)]
 
     @staticmethod
     def get_urls_from_tweet(tweet):
@@ -109,7 +91,7 @@ class TwitterAPI(Twitter):
         self.api = API(auth)
 
     def get_num_tweets(self, user):
-        pass
+        return self.api.get_user(user).statuses
 
     def get_followers(self, user):
         temp = []
@@ -134,16 +116,22 @@ class TwitterAPI(Twitter):
         return self.api.get_user(user).friends_count
 
     def get_favs(self, user):
+        # NOTE: not possible by API
         pass
 
     def get_num_favs(self, user):
-        pass
+        return self.api.get_user(user).favorite_count
 
     def get_num_favs_by_user(self, user):
+        # NOTE: not possible by API
         pass
 
     def get_user_bio(self, user):
-        pass
+        return self.api.get_user(user).description
+
+    def is_official(self, user):
+        return self.api.get_user(user).verified
+
 
 class TwitterScraper(Twitter):
     """Crawls Twitter"""

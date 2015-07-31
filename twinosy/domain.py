@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
+
+import os
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Boolean, Integer, String, Table, \
-     ForeignKey
+     ForeignKey, create_engine
 from sqlalchemy.orm import relationship, backref, sessionmaker
-# testing
-from sqlalchemy import create_engine
+from sqlalchemy.sql import select
+from contextlib import contextmanager
 
-
-engine = create_engine('sqlite:///:memory:', echo=False)
 
 Base = declarative_base()
 following = Table('following', Base.metadata,
@@ -33,6 +34,9 @@ class User(Base):
     account = Column(String, unique=True, nullable=False)
     description = Column(String)
     official = Column(Boolean)
+    protected = Column(Boolean)
+    time_zone = Column(String)
+    twi_id = Column(Integer, unique=True)
     following = relationship("User", secondary=following,
                              primaryjoin=uid==following.c.user,
                              secondaryjoin=uid==following.c.follows)
@@ -40,27 +44,62 @@ class User(Base):
                              primaryjoin=uid==followers.c.user,
                              secondaryjoin=uid==followers.c.follower)
 
+    def follow(self, user):
+        """Follows a user"""
+        # TODO queck that the user exists
+        # User.check_user(user)
+        if user not in self.following:
+            self.following.append(user)
+            user.followers.append(self)
+
+    def unfollow(self, user):
+        """Unfollows a user"""
+        if user in self.following:
+            self.following.remove(user)
+            user.followers.remove(self)
+
     def __repr__(self):
         return ("<User(uid='%d', account='%s', description='%s'," + \
-                " official='%s')>") % (self.uid, self.account,
-                                       self.description, self.official)
+                " official='%s')>") % (self.uid, self.account, self.description, self.official)
+
+class Database(object):
+
+    def __init__(self, name):
+        db_path = os.path.join(os.getcwd(), 'twinosy-data')
+        if not os.path.exists(db_path):
+            os.makedirs(db_path)
+        db_path = os.path.join(db_path, name)
+        self.engine = create_engine('sqlite:///{0}'.format(db_path))
+        self.engine.echo = False
+        Base.metadata.create_all(self.engine)
+
+        self.Session = sessionmaker(bind=self.engine)
+
+@contextmanager
+def session_scope(db):
+    session = db.Session()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 if __name__ == '__main__':
     print " ~ Starting tests ~ \n"
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    # Without a engine:
-    # Session = sessionmaker()
-    # Session.configure(bind=engine)
-    session = Session()
-    tuser = User(account='7flying', description='SUPER', official=False)
-    session.add(tuser)
-    tuser2 = User(account='another', description='AND', official=False,
-                  following=[tuser])
-    session.add(tuser2)
-    session.commit()
-    print tuser
-    print tuser2
-    print tuser2.following
-    session.close()
     
+    d = Database('quicktest.db')
+    tuser2 = User(account='another', description='AND', official=False)
+    tuser = User(account='7flying', description='SUPER', official=False)
+    with session_scope(d) as session:
+        tuser2.follow(tuser)
+        session.add_all([tuser, tuser2])
+        #session.commit()
+
+    s = select([user.c.acount, user.c.description, user.c.official,
+                user.c.following]).where(user.c.account == 'another')
+    conn = d.engine.connect()
+    result = conn.execute(s)
+    print result
