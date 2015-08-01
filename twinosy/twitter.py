@@ -63,6 +63,7 @@ class Twitter(object):
 
     @abc.abstractmethod
     def is_official(self, user):
+        """Checks if the given account is verified (official) or not."""
 
     @staticmethod
     def get_urls_from_tweet(tweet):
@@ -76,9 +77,11 @@ class Twitter(object):
             return matcher_url.findall(tweet)
 
 class TwitterAPI(Twitter):
+    
     def __init__(self):
         Twitter.__init__(self)
-        # TODO cache the results
+        self._login()
+        # Cache the results
         self.cache = {}
         # TODO check the ratings
         self.limits = defaultdict(int)
@@ -90,8 +93,13 @@ class TwitterAPI(Twitter):
                               os.environ['TWI_AC_SECRET'])
         self.api = API(auth)
 
+    def _check_cache(self, user):
+        if user not in self.cache:
+            self.cache[user] = self.api.get_user(user)
+        
     def get_num_tweets(self, user):
-        return self.api.get_user(user).statuses
+        self._check_cache(user)
+        return self.cache[user].statuses_count
 
     def get_followers(self, user):
         temp = []
@@ -110,27 +118,32 @@ class TwitterAPI(Twitter):
         return temp
 
     def get_num_followers(self, user):
-        return self.api.get_user(user).followers_count
+        self._check_cache(user)
+        return self.cache[user].followers_count
 
     def get_num_following(self, user):
-        return self.api.get_user(user).friends_count
+        self._check_cache(user)
+        return self.cache[user].friends_count
 
     def get_favs(self, user):
         # NOTE: not possible by API
         pass
 
     def get_num_favs(self, user):
-        return self.api.get_user(user).favorite_count
+        # NOTE: not possible by API
+        pass
 
     def get_num_favs_by_user(self, user):
         # NOTE: not possible by API
         pass
 
     def get_user_bio(self, user):
-        return self.api.get_user(user).description
+        self._check_cache(user)
+        return self.cache[user].description
 
     def is_official(self, user):
-        return self.api.get_user(user).verified
+        self._check_cache(user)
+        return self.cache[user].verified
 
 
 class TwitterScraper(Twitter):
