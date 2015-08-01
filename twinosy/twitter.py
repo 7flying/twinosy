@@ -77,6 +77,10 @@ class Twitter(object):
             return matcher_url.findall(tweet)
 
 class TwitterAPI(Twitter):
+
+    LIMIT_USERS = 100
+    LIMIT_FAVS = 100
+    LIMIT_TWEETS = 100
     
     def __init__(self):
         Twitter.__init__(self)
@@ -103,18 +107,29 @@ class TwitterAPI(Twitter):
 
     def get_followers(self, user):
         temp = []
-        cur = Cursor(self.api.followers, screen_name=user).pages()
-        for page in cur:
-            temp.extend([u.screen_name for u in page])
-            time.sleep(30)
+        cur = Cursor(self.api.followers, screen_name=user).items(
+            TwitterAPI.LIMIT_USERS)
+        for u in cur:
+            if u.screen_name not in self.cache:
+                self.cache[u.screen_name] = u
+            temp.append(u.screen_name)
+            # 30 requests in 15 min window, pages of 20 users
+            if len(temp) % 20 == 0:
+                time.sleep(30)
         return temp
 
     def get_following(self, user):
         temp = []
-        cur = Cursor(self.api.friends_ids, screen_name=user).pages()
-        for page in cur:
-            temp.extend([self.api.get_user(u) for u in page])
-            time.sleep(60)
+        cur = Cursor(self.api.friends_ids, screen_name=user).items(
+            TwitterAPI.LIMIT_USERS)
+        for u in cur:
+            user = self.api.get_user(u)
+            if user.screen_name not in self.cache:
+                self.cache[user.screen_name] = user
+            temp.append(user.screen_name)
+            # 15 requests in 15 min window, pages of 20 users
+            if len(temp) % 20 == 0:
+                time.sleep(60)
         return temp
 
     def get_num_followers(self, user):
@@ -126,8 +141,14 @@ class TwitterAPI(Twitter):
         return self.cache[user].friends_count
 
     def get_favs(self, user):
-        # NOTE: not possible by API
-        pass
+        temp = []
+        # 15 requests in 15 min window, pages of 20 favs
+        cur = Cursor(self.api.favorites, screen_name=user).items(
+            TwitterAPI.LIMIT_FAVS)
+        for t in cur:
+            temp.append(t)
+            if len(temp) % 20 == 0:
+                time.sleep(30)
 
     def get_num_favs(self, user):
         # NOTE: not possible by API
