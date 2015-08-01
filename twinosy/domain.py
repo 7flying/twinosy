@@ -46,8 +46,6 @@ class User(Base):
 
     def follow(self, user):
         """Follows a user"""
-        # TODO queck that the user exists
-        # User.check_user(user)
         if user not in self.following:
             self.following.append(user)
             user.followers.append(self)
@@ -60,7 +58,8 @@ class User(Base):
 
     def __repr__(self):
         return ("<User(uid='%d', account='%s', description='%s'," + \
-                " official='%s')>") % (self.uid, self.account, self.description, self.official)
+                " official='%s')>") % (self.uid, self.account, self.description,
+                                       self.official)
 
 class Database(object):
 
@@ -72,8 +71,15 @@ class Database(object):
         self.engine = create_engine('sqlite:///{0}'.format(db_path))
         self.engine.echo = False
         Base.metadata.create_all(self.engine)
+        Base.metadata.bind = self.engine
+        self.Session = sessionmaker()
 
-        self.Session = sessionmaker(bind=self.engine)
+    def account_exists(self, account):
+        vl = None
+        with session_scope(self) as session:
+            vl = session.query(User).filter(
+                User.account == account).first() is not None
+        return vl
 
 @contextmanager
 def session_scope(db):
@@ -87,9 +93,10 @@ def session_scope(db):
     finally:
         session.close()
 
+
 if __name__ == '__main__':
     print " ~ Starting tests ~ \n"
-    
+    """
     d = Database('quicktest.db')
     tuser2 = User(account='another', description='AND', official=False)
     tuser = User(account='7flying', description='SUPER', official=False)
@@ -97,9 +104,11 @@ if __name__ == '__main__':
         tuser2.follow(tuser)
         session.add_all([tuser, tuser2])
         #session.commit()
-
-    s = select([user.c.acount, user.c.description, user.c.official,
-                user.c.following]).where(user.c.account == 'another')
-    conn = d.engine.connect()
-    result = conn.execute(s)
-    print result
+    """
+    d = Database('quicktest.db')
+    with session_scope(d) as session:
+        perso = session.query(User).first()
+        print perso
+        custm = session.query(User).filter(User.account == '7flyin').first()
+        print custm
+        print d.account_exists('another')
