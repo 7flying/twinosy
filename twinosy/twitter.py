@@ -45,7 +45,7 @@ class Twitter(object):
         """Returns the number of following."""
 
     @abc.abstractmethod
-    def get_favs(self, user):
+    def get_favs(self, user, limit):
         """Returns the favourites of the given user."""
 
     @abc.abstractmethod
@@ -58,30 +58,54 @@ class Twitter(object):
         others."""
 
     @abc.abstractmethod
+    def get_user_id(self, user):
+        """Returns the user's id."""
+
+    @abc.abstractmethod
+    def get_user_name(self, user):
+        """Gets the user screen name"""
+
+    @abc.abstractmethod
     def get_user_bio(self, user):
         """Returns a user's profile description."""
+
+    @abc.abstractmethod
+    def get_user_location(self, user):
+        """Returns the user's location."""
+
+    @abc.abstractmethod
+    def get_user_timezone(self, user):
+        """Returns the user's default time zone."""
 
     @abc.abstractmethod
     def is_official(self, user):
         """Checks if the given account is verified (official) or not."""
 
+    @abc.abstractmethod
+    def is_suspended(self, user):
+        """Checks if the given account is suspended."""
+
+    @abc.abstractmethod
+    def is_protected(self, user):
+        """Checks if the account is protected."""
+
     @staticmethod
-    def get_urls_from_tweet(tweet):
+    def get_urls_from_tweet(tw):
         """Returns a list with the urls in the tweet."""
-        if tweet == None or len(tweet) == 0:
+        if tw == None or len(tw) == 0:
             return []
         else:
-            matcher_url = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|'
-                                     + '[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]'
+            matcher_url = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|'\
+                                     + '[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]'\
                                      + '))+')
-            return matcher_url.findall(tweet)
+            return matcher_url.findall(tw)
 
 class TwitterAPI(Twitter):
 
     LIMIT_USERS = 100
     LIMIT_FAVS = 100
     LIMIT_TWEETS = 100
-    
+
     def __init__(self):
         Twitter.__init__(self)
         self._login()
@@ -100,7 +124,7 @@ class TwitterAPI(Twitter):
     def _check_cache(self, user):
         if user not in self.cache:
             self.cache[user] = self.api.get_user(user)
-        
+
     def get_num_tweets(self, user):
         self._check_cache(user)
         return self.cache[user].statuses_count
@@ -140,31 +164,59 @@ class TwitterAPI(Twitter):
         self._check_cache(user)
         return self.cache[user].friends_count
 
-    def get_favs(self, user):
+    def get_favs(self, user, limit=LIMIT_FAVS):
+        # TODO clean
         temp = []
         # 15 requests in 15 min window, pages of 20 favs
-        cur = Cursor(self.api.favorites, screen_name=user).items(
-            TwitterAPI.LIMIT_FAVS)
+        cur = Cursor(self.api.favorites, screen_name=user).items(limit)
         for t in cur:
             temp.append(t)
             if len(temp) % 20 == 0:
                 time.sleep(30)
 
     def get_num_favs(self, user):
-        # NOTE: not possible by API
-        pass
+        self._check_cache(user)
+        return self.cache[user].favourites_count
 
     def get_num_favs_by_user(self, user):
         # NOTE: not possible by API
         pass
 
+    def get_user_id(self, user):
+        self._check_cache(user)
+        return self.cache[user].id
+
+    def get_user_name(self, user):
+        self._check_cache(user)
+        return self.cache[user].name
+
     def get_user_bio(self, user):
         self._check_cache(user)
         return self.cache[user].description
 
+    def get_user_location(self, user):
+        self._check_cache(user)
+        return self.cache[user].location
+
+    def get_user_timezone(self, user):
+        self._check_cache(user)
+        return self.cache[user].time_zone
+
     def is_official(self, user):
         self._check_cache(user)
         return self.cache[user].verified
+
+    def is_suspended(self, user):
+        self._check_cache(user)
+        try:
+            res = self.cache[user].suspended
+            return res
+        except AttributeError:
+            return 'No data'
+
+    def is_protected(self, user):
+        self._check_cache(user)
+        return self.cache[user].protected
 
 
 class TwitterScraper(Twitter):
@@ -238,7 +290,7 @@ class TwitterScraper(Twitter):
         if limit and limit < expected:
             expected = limit
         config.print_same_line("Processing...", True)
-        while len(ret) < expected and error < Twitter.MAX_ERRORS_USER:
+        while len(ret) < expected and error < TwitterScraper.MAX_ERRORS_USER:
             scroll = self._scroll_down(scroll)
             soup = BeautifulSoup(self.firefox.page_source, "lxml")
             elements_soup = soup.find_all(class_='js-stream-item')
@@ -362,7 +414,7 @@ class TwitterScraper(Twitter):
             return None
 
     def get_num_favs_by_user(self, user, limit=False):
-        num = self.get_num_favourites(user)
+        num = self.get_num_favs(user)
         if user == self.username:
             self.firefox.get('https://twitter.com/favorites')
         else:
@@ -411,7 +463,7 @@ class TwitterScraper(Twitter):
                 class_='ProfileTweet-text').getText()
         else:
             return None
-    
+
     def _get_favs_who(self, expected, limit):
         """Private method to process the fav tweets."""
         if self._is_timeline_protected():
@@ -422,7 +474,8 @@ class TwitterScraper(Twitter):
         if limit and limit < expected:
             expected = limit
         config.print_same_line("Processing...", True)
-        while len(processed) < expected and error < Twitter.MAX_ERRORS_USER:
+        while len(processed) < expected and \
+          error < TwitterScraper.MAX_ERRORS_USER:
             scroll = self._scroll_down(scroll)
             tweets = self._get_js_stream()
             for tweet in tweets:
@@ -502,7 +555,7 @@ class TwitterScraper(Twitter):
                     ret = []
                     processed = set()
                     while len(processed) < lastx and \
-                      error < Twitter.MAX_ERRORS_USER:
+                      error < TwitterScraper.MAX_ERRORS_USER:
                         scroll = self._scroll_down(scroll)
                         soup = BeautifulSoup(self.firefox.page_source, "lxml")
                         tweets = [x.find_all(class_='ProfileTweet')
@@ -549,7 +602,7 @@ class TwitterScraper(Twitter):
             return None
         url = 'https://twitter.com/favorites' if user == self.username \
             else 'https://twitter.com/' + user + '/favorites'
-        num = self.get_num_favourites(user)
+        num = self.get_num_favs(user)
         lastx = num if num < lastx else lastx
         return self._get_whole_tweets_url(url, lastx)
 
@@ -565,7 +618,7 @@ class TwitterScraper(Twitter):
                 ret = []
                 processed = set()
                 while len(processed) < lastx and \
-                    error < Twitter.MAX_ERRORS_USER:
+                    error < TwitterScraper.MAX_ERRORS_USER:
                     scroll = self._scroll_down(scroll)
                     soup = BeautifulSoup(self.firefox.page_source, "lxml")
                     tweets = [x.find_all(class_='ProfileTweet')
@@ -599,6 +652,8 @@ class TwitterScraper(Twitter):
 
 
 if __name__ == '__main__':
+    pass
+    """
     twitter = TwitterScraper(argv[1], argv[2])
     twitter._login()
     tweets = twitter.get_whole_tweets_last('lifehacker', 25)
@@ -606,3 +661,4 @@ if __name__ == '__main__':
         print tweet
     twitter._sign_out()
     print Twitter.get_urls_from_tweet("@something http:/7hello https://hello.com")
+    """
