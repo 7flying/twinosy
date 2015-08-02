@@ -4,7 +4,7 @@ from core import Core
 
 def banner():
     print """ _____        _                   
-|_   _|      (_)                      
+|_   _|      (_)                v0.1  
   | |_      ___ _ __   ___  ___ _   _ 
   | \ \ /\ / / | '_ \ / _ \/ __| | | |
   | |\ V  V /| | | | | (_) \__ \ |_| |
@@ -33,7 +33,6 @@ class Shell(object):
             self._eval_input(evl)
 
     def _eval_input(self, commands):
-        print commands
         args = []
         if len(commands) > 1:
             args = commands[1:]
