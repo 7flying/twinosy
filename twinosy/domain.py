@@ -31,9 +31,12 @@ class User(Base):
 
     uid = Column(Integer, primary_key=True)
     account = Column(String, unique=True, nullable=False)
+    account_id = Column(Integer, unique=True)
     description = Column(String)
     official = Column(Boolean)
     protected = Column(Boolean)
+    suspended = Column(Boolean)
+    location = Column(String)
     time_zone = Column(String)
     twi_id = Column(Integer, unique=True)
     following = relationship("User", secondary=following,

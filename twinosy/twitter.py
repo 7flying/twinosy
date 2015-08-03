@@ -5,6 +5,7 @@ import re
 import os
 import config
 import time
+
 from collections import defaultdict
 from sys import argv
 from selenium import webdriver
@@ -192,7 +193,7 @@ class TwitterAPI(Twitter):
 
     def get_user_bio(self, user):
         self._check_cache(user)
-        return self.cache[user].description
+        return self.cache[user].description.replace('\n', ' ').replace('\r', '')
 
     def get_user_location(self, user):
         self._check_cache(user)

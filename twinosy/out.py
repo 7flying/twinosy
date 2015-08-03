@@ -14,4 +14,4 @@ def to_table(header, rows):
     return table
 
 def p_info(text, level=1):
-    print "\n " + ("~" * level) + " " + text
+    print ("~" * level) + " " + text

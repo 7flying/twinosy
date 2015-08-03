@@ -11,15 +11,15 @@ class Core(object):
     def __init__(self, shell):
         self.shell = shell
         self.twiapi = TwitterAPI()
-        self.commands = { 'help' : {'desc': 'Display this help',
-                                    'fn': self.core_help},
-                          'exit' : {'desc': 'Exit Twinosy',
-                                    'fn': self.core_exit},
-                          'clear' : {'desc': 'Clear the terminal screen',
-                                     'fn': self.core_clear},
-                          'inspect' : {'desc': '',
-                                       'fn': self.core_inspect}
-                          }
+        self.commands = {'help' : {'desc': 'Display this help',
+                                   'fn': self.core_help},
+                         'exit' : {'desc': 'Exit Twinosy',
+                                   'fn': self.core_exit},
+                         'clear' : {'desc': 'Clear the terminal screen',
+                                    'fn': self.core_clear},
+                         'inspect' : {'desc': '',
+                                      'fn': self.core_inspect}
+                        }
 
     def core_help(self, *args):
         """Displays help"""
@@ -54,7 +54,7 @@ class Core(object):
                             self.twiapi.get_num_followers(account),
                             self.twiapi.get_num_following(account)])
             position_r.append([account, self.twiapi.get_user_location(account),
-                              self.twiapi.get_user_timezone(account)])
+                               self.twiapi.get_user_timezone(account)])
             acc_sta_r.append([account, self.twiapi.is_official(account),
                               self.twiapi.is_suspended(account),
                               self.twiapi.is_protected(account)])
