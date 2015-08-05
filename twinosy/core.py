@@ -4,7 +4,7 @@ import os
 
 from domain import Database, User
 from twitter import TwitterAPI, TwitterScraper
-from out import to_table, p_info
+from out import to_table, p_info, p_error
 
 class Core(object):
 
@@ -39,31 +39,38 @@ class Core(object):
 
     def core_inspect(self, *args):
         """Inspects the given account retrieving basic user info."""
-        # TODO Check account existance
         g_info = ['Account', 'Name', 'ID', 'Bio']
         usage = ['Account', '# Tweets', '# Favs', '# Followers', '# Following']
         position = ['Account', 'Location', 'Time zone']
         acc_status = ['Account', 'Verified?', 'Suspended?', 'Protected?']
         g_info_r, usage_r, position_r, acc_sta_r = ([] for i in range(4))
         for account in args:
-            g_info_r.append([account, self.twiapi.get_user_name(account),
-                             self.twiapi.get_user_id(account),
-                             self.twiapi.get_user_bio(account)])
-            usage_r.append([account, self.twiapi.get_num_tweets(account),
-                            self.twiapi.get_num_favs(account),
-                            self.twiapi.get_num_followers(account),
-                            self.twiapi.get_num_following(account)])
-            position_r.append([account, self.twiapi.get_user_location(account),
-                               self.twiapi.get_user_timezone(account)])
-            acc_sta_r.append([account, self.twiapi.is_official(account),
-                              self.twiapi.is_suspended(account),
-                              self.twiapi.is_protected(account)])
+            if self.twiapi.check_account_existance(account):
+                g_info_r.append([account, self.twiapi.get_user_name(account),
+                                 self.twiapi.get_user_id(account),
+                                 self.twiapi.get_user_bio(account)])
+                usage_r.append([account, self.twiapi.get_num_tweets(account),
+                                self.twiapi.get_num_favs(account),
+                                self.twiapi.get_num_followers(account),
+                                self.twiapi.get_num_following(account)])
+                position_r.append([account,
+                                   self.twiapi.get_user_location(account),
+                                   self.twiapi.get_user_timezone(account)])
+                acc_sta_r.append([account, self.twiapi.is_official(account),
+                                  self.twiapi.is_suspended(account),
+                                  self.twiapi.is_protected(account)])
+            else:
+                p_error("'" + account + "' does not exist")
         p_info('Inspect results:')
-        p_info('General info:', 2)
-        print to_table(g_info, g_info_r)
-        p_info('Position:', 2)
-        print to_table(position, position_r)
-        p_info('Usage:', 2)
-        print to_table(usage, usage_r)
-        p_info('Account status:', 2)
-        print to_table(acc_status, acc_sta_r)
+        if len(g_info_r) > 0 and len(position_r) > 0 and len(usage_r) > 0 and \
+          len(acc_sta_r) > 0:
+            p_info('General info:', 2)
+            print to_table(g_info, g_info_r)
+            p_info('Position:', 2)
+            print to_table(position, position_r)
+            p_info('Usage:', 2)
+            print to_table(usage, usage_r)
+            p_info('Account status:', 2)
+            print to_table(acc_status, acc_sta_r)
+        else:
+            p_info('No results', 2)

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from prettytable import PrettyTable
+from colorama import Fore, Style
 
 def to_table(header, rows):
     """Displays info in a table.
@@ -15,3 +16,7 @@ def to_table(header, rows):
 
 def p_info(text, level=1):
     print ("~" * level) + " " + text
+
+def p_error(text, level=1):
+    print (Fore.RED + ("*" * level) + " " + text + " " + ("*" * level))
+    print Style.RESET_ALL

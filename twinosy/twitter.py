@@ -7,7 +7,6 @@ import config
 import time
 
 from collections import defaultdict
-from sys import argv
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
@@ -15,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ex_co
 from bs4 import BeautifulSoup
 from tweepy import API, Cursor, OAuthHandler
-from domain import User
+from tweepy.error import TweepError
 
 
 MAIN_URL = "https://twitter.com"
@@ -23,7 +22,17 @@ MAIN_URL = "https://twitter.com"
 class Twitter(object):
 
     def __init__(self):
+        self.cache = {}
+
+    def load_cache(self, cache):
+        self.cache = cache
+
+    def save_cache(self, cache):
         pass
+
+    @abc.abstractmethod
+    def check_account_existance(self, account):
+        """Checks whether the given account exists or not."""
 
     @abc.abstractmethod
     def get_num_tweets(self, user):
@@ -110,8 +119,6 @@ class TwitterAPI(Twitter):
     def __init__(self):
         Twitter.__init__(self)
         self._login()
-        # Cache the results
-        self.cache = {}
         # TODO check the ratings
         self.limits = defaultdict(int)
 
@@ -124,7 +131,17 @@ class TwitterAPI(Twitter):
 
     def _check_cache(self, user):
         if user not in self.cache:
-            self.cache[user] = self.api.get_user(user)
+            try:
+                self.cache[user] = self.api.get_user(user)
+            except TweepError:
+                # TODO handle
+                pass
+    def check_account_existance(self, account):
+        try:
+            self.cache[account] = self.api.get_user(account)
+            return True
+        except TweepError:
+            return False
 
     def get_num_tweets(self, user):
         self._check_cache(user)
