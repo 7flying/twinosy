@@ -25,20 +25,25 @@ followers = Table('followers', Base.metadata,
                          ForeignKey('user.uid', ondelete='CASCADE'),
                          primary_key=True))
 
+
 class User(Base):
     """A Twitter user"""
     __tablename__ = 'user'
 
     uid = Column(Integer, primary_key=True)
     account = Column(String, unique=True, nullable=False)
-    account_id = Column(Integer, unique=True)
+    name = Column(String)
     description = Column(String)
-    official = Column(Boolean)
+    verified = Column(Boolean)
     protected = Column(Boolean)
     suspended = Column(Boolean)
     location = Column(String)
     time_zone = Column(String)
-    twi_id = Column(Integer, unique=True)
+    id = Column(Integer, unique=True)
+    statuses_count = Column(Integer)
+    favourites_count = Column(Integer)
+    friends_count = Column(Integer)
+    followers_count = Column(Integer)
     following = relationship("User", secondary=following,
                              primaryjoin=uid==following.c.user,
                              secondaryjoin=uid==following.c.follows)
@@ -63,6 +68,7 @@ class User(Base):
                 " official='%s')>") % (self.uid, self.account, self.description,
                                        self.official)
 
+
 class Database(object):
 
     def __init__(self, name):
@@ -82,6 +88,46 @@ class Database(object):
             vl = session.query(User).filter(
                 User.account == account).first() is not None
         return vl
+
+    def create_cache(self):
+        cache = {}
+        with session_scope(self) as session:
+            users = session.query(User).all()
+            for user in users:
+                cache[user.account] = user
+        return cache
+
+    def save_cache(self, cache):
+        with session_scope(self) as session:
+            for key in cache.keys():
+                 u = session.query(User).filter(User.account == key).first()
+                 if u is None:
+                     u = User(account=key, id=cache[key].id,
+                              name=cache[key].name,
+                              description=cache[key].description,
+                              verified=cache[key].verified,
+                              protected=cache[key].protected,
+                              suspended=cache[key].suspended,
+                              location=cache[key].location,
+                              time_zone=cache[key].time_zone,
+                              statuses_count=cache[key].statuses_count,
+                              favourites_count=cache[key].favourites_count,
+                              friends_count=cache[key].friends_count,
+                              followers_count=cache[key].followers_count)
+                 else:
+                    u.name = cache[key].name
+                    u.description = cache[key].description
+                    u.verified = cache[key].verified
+                    u.protected = cache[key].protected
+                    u.suspended = cache[key].suspended
+                    u.location = cache[key].location
+                    u.time_zone = cache[key].time_zone
+                    u.id = cache[key].id
+                    u.statuses_count = cache[key].statuses_count
+                    u.favourites_count = cache[key].favourites_count
+                    u.friends_count = cache[key].friends_count
+                    u.followers_count = cache[key].followers_count
+
 
 @contextmanager
 def session_scope(db):

@@ -2,15 +2,17 @@
 
 import os
 
-from domain import Database, User
-from twitter import TwitterAPI, TwitterScraper
+from domain import Database
+from twitter import TwitterAPI
 from out import to_table, p_info, p_error
 
 class Core(object):
 
-    def __init__(self, shell):
+    def __init__(self, shell, db_name='.twinosy.db'):
         self.shell = shell
+        self.db = Database(db_name)
         self.twiapi = TwitterAPI()
+        self.twiapi.load_cache(self.db.create_cache())
         self.commands = {'help' : {'desc': 'Display this help',
                                    'fn': self.core_help},
                          'exit' : {'desc': 'Exit Twinosy',
@@ -32,6 +34,7 @@ class Core(object):
     def core_exit(self, *args):
         """Exits twinosy"""
         self.shell.on = False
+        self.db.save_cache(self.twiapi.cache)
 
     def core_clear(self,*args):
         """Clear the terminal screen."""

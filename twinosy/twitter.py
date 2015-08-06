@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as ex_co
 from bs4 import BeautifulSoup
 from tweepy import API, Cursor, OAuthHandler
 from tweepy.error import TweepError
-
+from domain import User
 
 MAIN_URL = "https://twitter.com"
 
@@ -26,9 +26,6 @@ class Twitter(object):
 
     def load_cache(self, cache):
         self.cache = cache
-
-    def save_cache(self, cache):
-        pass
 
     @abc.abstractmethod
     def check_account_existance(self, account):
@@ -132,13 +129,33 @@ class TwitterAPI(Twitter):
     def _check_cache(self, user):
         if user not in self.cache:
             try:
-                self.cache[user] = self.api.get_user(user)
+                u = self.api.get_user(user)
+                if u is not None:
+                    self._add_cache(user, u)
             except TweepError:
                 # TODO handle
                 pass
+
+    def _add_cache(self, user, u):
+        self.cache[user] = None
+        self.cache[user] = User(account=user, id=u.id, name=u.name,
+                                description=u.description, verified=u.verified,
+                                protected=u.protected, location=u.location,
+                                time_zone=u.time_zone,
+                                statuses_count=u.statuses_count,
+                                favourites_count=u.favourites_count,
+                                friends_count=u.friends_count,
+                                followers_count=u.followers_count)
+        try:
+            self.cache[user].suspended = u.suspended
+        except AttributeError:
+            pass
+
     def check_account_existance(self, account):
         try:
-            self.cache[account] = self.api.get_user(account)
+            u = self.api.get_user(account)
+            if u is not None:
+                self._add_cache(account, u)
             return True
         except TweepError:
             return False
