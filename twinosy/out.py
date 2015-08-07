@@ -20,3 +20,7 @@ def p_info(text, level=1):
 def p_error(text, level=1):
     print (Fore.RED + ("*" * level) + " " + text + " " + ("*" * level))
     print Style.RESET_ALL
+
+def p_system(text, level=1):
+    print (Fore.BLUE + ("+" * level) + " " + text)
+    print Style.RESET_ALL

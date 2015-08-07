@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import os
+import datetime
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Boolean, Integer, String, Table, \
+from sqlalchemy import Column, Boolean, Integer, String, DateTime, Table, \
      ForeignKey, create_engine
 from sqlalchemy.orm import relationship, sessionmaker
 from contextlib import contextmanager
+from out import p_system
 
 
 Base = declarative_base()
@@ -44,6 +46,8 @@ class User(Base):
     favourites_count = Column(Integer)
     friends_count = Column(Integer)
     followers_count = Column(Integer)
+    last_updated = Column(DateTime, default=datetime.datetime.now,
+                          onupdate=datetime.datetime.now)
     following = relationship("User", secondary=following,
                              primaryjoin=uid==following.c.user,
                              secondaryjoin=uid==following.c.follows)
@@ -127,6 +131,8 @@ class Database(object):
                     u.favourites_count = cache[key].favourites_count
                     u.friends_count = cache[key].friends_count
                     u.followers_count = cache[key].followers_count
+                 session.add(u)
+        p_system('Cache saved')
 
 
 @contextmanager
