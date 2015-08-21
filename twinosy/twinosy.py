@@ -20,6 +20,7 @@ class Shell(object):
     def __init__(self):
         self.core = Core(self)
         self.on = False
+        self.mode_offline = False
 
     def init(self):
         self.on = True

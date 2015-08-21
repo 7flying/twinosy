@@ -19,8 +19,11 @@ class Core(object):
                                    'fn': self.core_exit},
                          'clear' : {'desc': 'Clear the terminal screen',
                                     'fn': self.core_clear},
+                         'mode' : {'desc': 'Change to online vs offline mode \
+                         or check current mode',
+                                   'fn': self.core_mode},
                          'inspect' : {'desc': '',
-                                      'fn': self.core_inspect}
+                                   'fn': self.core_inspect}
                         }
 
     def core_help(self, *args):
@@ -39,6 +42,18 @@ class Core(object):
     def core_clear(self,*args):
         """Clear the terminal screen."""
         os.system('clear')
+
+    def core_mode(self, *args):
+        if len(args) > 0:
+            if args[0] is 'online':
+                self.shell.mode_offline = False
+            elif args[0] is 'offline':
+                self.shell.mode_offline = True
+            else:
+                p_error("Unknown mode. Choose 'online' or 'offline'")
+        else:
+            text = 'OFFLINE' if self.shell.mode_offline else 'ONLINE'
+            p_info('Twinosy has: ' + text + ' mode')
 
     def core_inspect(self, *args):
         """Inspects the given account retrieving basic user info."""
